@@ -23,7 +23,7 @@ define $(PKG)_BUILD
 	$(MAKE) -C '$(BUILD_DIR)' -j 1 install
 
 	'$(TARGET)-g++' \
-		'$(TEST_FILE) \
+		'$(TEST_FILE)' \
 		-o '$(PREFIX)/$(TARGET)/bin/test-highway.exe' \
 		`$(TARGET)-pkg-config libhwy --cflags --libs`
 endef
