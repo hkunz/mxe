@@ -7,7 +7,7 @@ $(PKG)_IGNORE   :=
 $(PKG)_VERSION  := 3.4.6
 $(PKG)_CHECKSUM := f8cfe743a81c8cc1dd3cbaafa7fa76f75ad31456b0fc45a42b086d12530a4e35
 $(PKG)_GH_CONF  := AcademySoftwareFoundation/openexr/tags,v
-$(PKG)_DEPS     := cc imath pthreads zlib
+$(PKG)_DEPS     := cc imath pthreads zlib openjph libdeflate
 
 define $(PKG)_BUILD
     mkdir -p '$(BUILD_DIR)'
