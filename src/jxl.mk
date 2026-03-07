@@ -17,8 +17,7 @@ define $(PKG)_BUILD
 	sed -i 's/find_package(LCMS2 2.12)/find_package(LCMS2 2.12 CONFIG)/' "$(SOURCE_DIR)/third_party/CMakeLists.txt"
 
 	cd "$(BUILD_DIR)" && \
-	$(TARGET)-cmake "$(SOURCE_DIR)" \
-		-DCMAKE_TOOLCHAIN_FILE='$(MXE_CMAKE_TOOLCHAIN)' \
+	'$(TARGET)-cmake' "$(SOURCE_DIR)" \
 		-DCMAKE_INSTALL_PREFIX='$(PREFIX)/$(TARGET)' \
 		-DCMAKE_PREFIX_PATH='$(PREFIX)/$(TARGET)' \
 		-DCMAKE_BUILD_TYPE=Release \
