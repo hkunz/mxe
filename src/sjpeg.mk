@@ -24,14 +24,15 @@ define $(PKG)_BUILD
     $(MAKE) -C '$(BUILD_DIR)' -j '$(JOBS)'
     $(MAKE) -C '$(BUILD_DIR)' -j 1 install
 
+    # Generate pkg-config (.pc) file for sjpeg (https://github.com/webmproject/sjpeg/issues/143)
     $(call GENERATE_PC, \
         $(PREFIX)/$(TARGET), \
         sjpeg, \
         Lightweight JPEG encoder with simple C API and optional C++ interface, \
         $($(PKG)_VERSION), \
         libjpeg libpng, \
+        , \
         -lsjpeg -ljpeg -lpng, \
-        "" \
     )
 
     '$(TARGET)-g++' \
