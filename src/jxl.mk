@@ -15,7 +15,7 @@ define $(PKG)_BUILD
 	# so CMake can locate MXE-installed LCMS2. Fixes issue reported in:
 	# https://github.com/libjxl/libjxl/pull/4655
 	tmpfile=$(mktemp) || exit 1
-	sed 's/find_package(LCMS2 2.12)/find_package(LCMS2 2.12 CONFIG)/' \
+	$(SED) 's/find_package(LCMS2 2.12)/find_package(LCMS2 2.12 CONFIG)/' \
 		"$(SOURCE_DIR)/third_party/CMakeLists.txt" > "$tmpfile" \
 		&& mv "$tmpfile" "$(SOURCE_DIR)/third_party/CMakeLists.txt"
 

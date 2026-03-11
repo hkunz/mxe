@@ -11,7 +11,7 @@ $(PKG)_DEPS     := cc zlib libdeflate
 
 define $(PKG)_BUILD
 	# Patch Windows.h include to lowercase for MinGW (https://github.com/wdas/ptex/issues/85)
-	sed 's|#include <Windows.h>|#include <windows.h>|' "$(SOURCE_DIR)/src/ptex/PtexPlatform.h" \
+	$(SED) 's|#include <Windows.h>|#include <windows.h>|' "$(SOURCE_DIR)/src/ptex/PtexPlatform.h" \
 		> tmpfile && \
 		mv tmpfile "$(SOURCE_DIR)/src/ptex/PtexPlatform.h"
 

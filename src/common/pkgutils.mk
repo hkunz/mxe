@@ -43,7 +43,7 @@ include src/common/library.pc.in
 
 define GENERATE_PC
 $(INSTALL) -d $(strip $1)/lib/pkgconfig
-sed \
+$(SED) \
     -e 's|@PREFIX@|$(strip $1)|g' \
     -e 's|@NAME@|$(strip $2)|g' \
     -e 's|@DESCRIPTION@|$(strip $3)|g' \

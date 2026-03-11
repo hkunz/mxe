@@ -10,7 +10,6 @@ $(PKG)_GH_CONF  := aous72/OpenJPH/tags
 $(PKG)_DEPS     := cc zlib
 
 define $(PKG)_BUILD
-    mkdir -p '$(BUILD_DIR)'
     cd '$(BUILD_DIR)' && '$(TARGET)-cmake' '$(SOURCE_DIR)' \
         -DCMAKE_INSTALL_PREFIX='$(PREFIX)/$(TARGET)' \
         -DBUILD_SHARED_LIBS=OFF \
