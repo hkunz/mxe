@@ -1,0 +1,4632 @@
+diff --git a/src/absl-test.cpp b/src/absl-test.cpp
+new file mode 100644
+index 00000000..17a78704
+--- /dev/null
++++ b/src/absl-test.cpp
+@@ -0,0 +1,40 @@
++/*
++    This file is part of MXE. See LICENSE.md for licensing information.
++
++    Initial test file scaffold generated using the "gsrc" tool:
++    https://github.com/hkunz/git-fetcher
++
++    Compilation (pkg-config):
++
++    ./usr/bin/x86_64-w64-mingw32.static-g++ \
++        src/absl-test.cpp \
++        $(./usr/bin/x86_64-w64-mingw32.static-pkg-config --cflags --libs absl_base absl_strings) \
++        -o usr/x86_64-w64-mingw32.static/bin/test-absl.exe
++
++    Compilation (manual):
++
++    ./usr/bin/x86_64-w64-mingw32.static-g++ \
++        src/absl-test.cpp \
++        -I usr/x86_64-w64-mingw32.static/include \
++        -L usr/x86_64-w64-mingw32.static/lib \
++        -labsl_strings \
++        -labsl_base \
++        -labsl_throw_delegate \
++        -o usr/x86_64-w64-mingw32.static/bin/test-absl.exe
++
++    Notes:
++        - This is only a minimal sanity check; it does not cover the full Abseil API.
++        - Modify include flags or linker flags if you built Abseil with additional modules.
++*/
++
++#include <absl/strings/str_cat.h>
++#include <absl/strings/string_view.h>
++#include <iostream>
++
++int main() {
++    absl::string_view a = "Hello";
++    absl::string_view b = "World";
++    std::string c = absl::StrCat(a, ", ", b, "!");
++    std::cout << c << std::endl;
++    return 0;
++}
+diff --git a/src/absl.mk b/src/absl.mk
+new file mode 100644
+index 00000000..fd46c462
+--- /dev/null
++++ b/src/absl.mk
+@@ -0,0 +1,41 @@
++# This file is part of MXE. See LICENSE.md for licensing information.
++# Initial package scaffold generated with the "gsrc" tool:
++# https://github.com/hkunz/git-fetcher
++
++PKG             := absl
++$(PKG)_WEBSITE  := https://abseil.io
++$(PKG)_DESCR    := Abseil C++ Common utility library for Google-style C++ development
++$(PKG)_VERSION  := 20260107.1
++$(PKG)_IGNORE   :=
++$(PKG)_CHECKSUM := 4314e2a7cbac89cac25a2f2322870f343d81579756ceff7f431803c2c9090195
++$(PKG)_GH_CONF  := abseil/abseil-cpp/tags
++$(PKG)_DEPS     := cc pthreads
++
++define $(PKG)_BUILD
++
++	# configure package with cmake
++	cd "$(BUILD_DIR)" && "$(TARGET)-cmake" "$(SOURCE_DIR)" \
++		-DCMAKE_INSTALL_PREFIX="$(PREFIX)/$(TARGET)" \
++		-DCMAKE_PREFIX_PATH="$(PREFIX)/$(TARGET)" \
++		-DBUILD_SHARED_LIBS=$(CMAKE_SHARED_BOOL) \
++		-DABSL_BUILD_MONOLITHIC_SHARED_LIBS=ON \
++		-DABSL_BUILD_TESTING=OFF \
++		-DABSL_BUILD_TEST_HELPERS=OFF \
++		-DABSL_ENABLE_INSTALL=ON \
++		-DABSL_MSVC_STATIC_RUNTIME=OFF \
++		-DABSL_PROPAGATE_CXX_STD=ON \
++		-DABSL_USE_EXTERNAL_GOOGLETEST=OFF \
++		-DABSL_USE_GOOGLETEST_HEAD=OFF \
++		-DABSL_USE_SYSTEM_INCLUDES=OFF \
++		-DBUILD_TESTING=ON \
++		-DCMAKE_BUILD_TYPE=Release
++
++	# build package and install
++	$(MAKE) -C "$(BUILD_DIR)" -j $(JOBS)
++	$(MAKE) -C "$(BUILD_DIR)" -j 1 install
++
++	# compile a test program to verify the library is usable
++	"$(TARGET)-g++" -Wall -Wextra "$(TEST_FILE)" \
++		-o "$(PREFIX)/$(TARGET)/bin/test-$(PKG).exe" \
++		`"$(TARGET)-pkg-config" "$(PKG)_base" "$(PKG)_strings" --cflags --libs`
++endef
+diff --git a/src/alembic-test.cpp b/src/alembic-test.cpp
+new file mode 100644
+index 00000000..d1cc43dd
+--- /dev/null
++++ b/src/alembic-test.cpp
+@@ -0,0 +1,56 @@
++/*
++    This file is part of MXE. See LICENSE.md for licensing information.
++
++    Initial test file scaffold generated using the "gsrc" tool:
++    https://github.com/hkunz/git-fetcher
++
++    Compilation (pkg-config):
++
++    ./usr/bin/x86_64-w64-mingw32.static-g++ \
++        src/alembic-test.cpp \
++        $(./usr/bin/x86_64-w64-mingw32.static-pkg-config --cflags --libs alembic) \
++        -o usr/x86_64-w64-mingw32.static/bin/test-alembic.exe
++
++    Compilation (manual):
++
++    ./usr/bin/x86_64-w64-mingw32.static-g++ \
++        src/alembic-test.cpp \
++        -I usr/x86_64-w64-mingw32.static/include \
++        -L usr/x86_64-w64-mingw32.static/lib \
++        -lAlembic \
++        -o usr/x86_64-w64-mingw32.static/bin/test-alembic.exe
++*/
++
++#include <Alembic/Abc/All.h>
++#include <Alembic/AbcGeom/All.h>
++#include <Alembic/AbcCoreOgawa/All.h>
++#include <iostream>
++#include <fstream>
++
++int main()
++{
++    const std::string filename = "test.abc";
++
++    std::cout << "Creating Alembic archive: " << filename << std::endl;
++
++    Alembic::Abc::OArchive archive(
++        Alembic::AbcCoreOgawa::WriteArchive(),
++        filename
++    );
++
++    Alembic::AbcGeom::OXform xform(
++        Alembic::Abc::OObject(archive, Alembic::Abc::kTop),
++        "root"
++    );
++
++    std::cout << "Created root Xform object in archive." << std::endl;
++
++    if (std::ifstream(filename).good())
++        std::cout << "Archive file exists: " << filename << std::endl;
++    else
++        std::cout << "Archive file NOT found!" << std::endl;
++
++    std::cout << "Alembic test finished successfully." << std::endl;
++
++    return 0;
++}
+diff --git a/src/alembic.mk b/src/alembic.mk
+new file mode 100644
+index 00000000..7d86b1d8
+--- /dev/null
++++ b/src/alembic.mk
+@@ -0,0 +1,59 @@
++# This file is part of MXE. See LICENSE.md for licensing information.
++# Initial package scaffold generated with the "gsrc" tool:
++# https://github.com/hkunz/git-fetcher
++
++include src/common/pkgconfig-generator.mk
++
++PKG             := alembic
++$(PKG)_WEBSITE  := http://alembic.io/
++$(PKG)_DESCR    := Alembic is an open framework for storing and sharing scene data that includes a C++ library, a file format, and client plugins and applications.
++$(PKG)_VERSION  := 1.8.11
++$(PKG)_IGNORE   :=
++$(PKG)_CHECKSUM := ab299bb4b1894a6675c73fa29940522b54c81a91b1d691ca3470d86b7345ffce
++$(PKG)_GH_CONF  := alembic/alembic/tags
++$(PKG)_DEPS     := cc boost hdf5 imath pthreads zlib
++
++define $(PKG)_BUILD
++
++	# configure package with cmake
++	cd "$(BUILD_DIR)" && "$(TARGET)-cmake" "$(SOURCE_DIR)" \
++		-DCMAKE_INSTALL_PREFIX="$(PREFIX)/$(TARGET)" \
++		-DCMAKE_PREFIX_PATH="$(PREFIX)/$(TARGET)" \
++		-DBUILD_SHARED_LIBS=$(CMAKE_SHARED_BOOL) \
++		-DALEMBIC_BUILD_LIBS=ON \
++		-DALEMBIC_DEBUG_WARNINGS_AS_ERRORS=ON \
++		-DALEMBIC_SHARED_LIBS=ON \
++		-DDOCS_PATH=OFF \
++		-DUSE_ARNOLD=OFF \
++		-DUSE_BINARIES=ON \
++		-DUSE_EXAMPLES=OFF \
++		-DUSE_HDF5=ON \
++		-DHDF5_ROOT="$(PREFIX)/$(TARGET)" \
++		-DUSE_MAYA=OFF \
++		-DUSE_PRMAN=OFF \
++		-DUSE_PYALEMBIC=OFF \
++		-DUSE_STATIC_BOOST=OFF \
++		-DUSE_STATIC_HDF5=OFF \
++		-DUSE_TESTS=ON \
++		-DCMAKE_BUILD_TYPE=Release
++
++	# build package and install
++	$(MAKE) -C "$(BUILD_DIR)" -j $(JOBS)
++	$(MAKE) -C "$(BUILD_DIR)" -j 1 install
++
++	# Only needed if the project does not ship a .pc file
++	$(call GENERATE_PC, \
++		$(PREFIX)/$(TARGET), \
++		$(PKG), \
++		$($(PKG)_DESCR), \
++		$($(PKG)_VERSION), \
++		, \
++		, \
++		-lAlembic, \
++	)
++
++	# compile a test program to verify the library is usable
++	"$(TARGET)-g++" "$(TEST_FILE)" \
++		-o "$(PREFIX)/$(TARGET)/bin/test-$(PKG).exe" \
++		`"$(TARGET)-pkg-config" "$(PKG)" --cflags --libs`
++endef
+diff --git a/src/aom-test.cpp b/src/aom-test.cpp
+new file mode 100644
+index 00000000..599d43a4
+--- /dev/null
++++ b/src/aom-test.cpp
+@@ -0,0 +1,63 @@
++/*
++    This file is part of MXE. See LICENSE.md for licensing information.
++
++    Initial test file scaffold generated using the "gsrc" tool:
++    https://github.com/hkunz/git-fetcher
++
++    Compilation (pkg-config):
++
++    ./usr/bin/x86_64-w64-mingw32.static-g++ \
++        src/aom-test.cpp \
++        $(./usr/bin/x86_64-w64-mingw32.static-pkg-config --cflags --libs aom) \
++        -o usr/x86_64-w64-mingw32.static/bin/test-aom.exe
++
++    Compilation (manual):
++
++    ./usr/bin/x86_64-w64-mingw32.static-g++ \
++        src/aom-test.cpp \
++        -I usr/x86_64-w64-mingw32.static/include \
++        -L usr/x86_64-w64-mingw32.static/lib \
++        -laom \
++        -o usr/x86_64-w64-mingw32.static/bin/test-aom.exe
++*/
++
++#include <cstdio>
++#include <cstdint>
++#include <aom/aom_encoder.h>
++#include <aom/aomcx.h>
++
++int main() {
++    // Print libaom version
++    const char* version = aom_codec_version_str();
++    printf("libaom version: %s\n", version);
++
++    // Prepare encoder interface
++    aom_codec_iface_t* iface = aom_codec_av1_cx(); // AV1 encoder
++    aom_codec_ctx_t codec;
++    aom_codec_enc_cfg_t cfg;
++
++    // Get default configuration
++    if (aom_codec_enc_config_default(iface, &cfg, 0)) {
++        printf("Failed to get default encoder config\n");
++        return 1;
++    }
++
++    // Change a simple parameter
++    cfg.g_w = 128;  // width
++    cfg.g_h = 128;  // height
++    cfg.g_timebase.num = 1;
++    cfg.g_timebase.den = 30;
++
++    // Initialize codec
++    if (aom_codec_enc_init(&codec, iface, &cfg, 0)) {
++        printf("Failed to initialize encoder\n");
++        return 1;
++    }
++
++    printf("Encoder initialized successfully!\n");
++
++    // Clean up
++    aom_codec_destroy(&codec);
++
++    return 0;
++}
+diff --git a/src/aom.mk b/src/aom.mk
+new file mode 100644
+index 00000000..5c56462c
+--- /dev/null
++++ b/src/aom.mk
+@@ -0,0 +1,64 @@
++# This file is part of MXE. See LICENSE.md for licensing information.
++# Initial package scaffold generated with the "gsrc" tool:
++# https://github.com/hkunz/git-fetcher
++
++PKG             := aom
++$(PKG)_WEBSITE  := https://aomedia.org/
++$(PKG)_DESCR    := AV1 Codec Library
++$(PKG)_VERSION  := 3.13.3
++$(PKG)_IGNORE   :=
++$(PKG)_CHECKSUM := 446a4ae9741cb8f3eeb98c949d25f91b48cb2b8569cae975c4b737392e9024fc
++$(PKG)_FILE     := lib$(PKG)-$($(PKG)_VERSION).tar.gz
++$(PKG)_SUBDIR   := lib$(PKG)-$($(PKG)_VERSION)
++$(PKG)_URL      := https://storage.googleapis.com/$(PKG)-releases/$($(PKG)_FILE)
++$(PKG)_DEPS     := cc pkgconf pthreads yasm
++
++define $(PKG)_BUILD
++
++	# configure package with cmake
++	cd "$(BUILD_DIR)" && "$(TARGET)-cmake" "$(SOURCE_DIR)" \
++		-DCMAKE_INSTALL_PREFIX="$(PREFIX)/$(TARGET)" \
++		-DCMAKE_PREFIX_PATH="$(PREFIX)/$(TARGET)" \
++		-DBUILD_SHARED_LIBS=$(CMAKE_SHARED_BOOL) \
++		-DENABLE_ARM_CRC32=ON \
++		-DENABLE_AVX2=ON \
++		-DENABLE_AVX512=ON \
++		-DENABLE_AVX=ON \
++		-DENABLE_CCACHE=OFF \
++		-DENABLE_DECODE_PERF_TESTS=OFF \
++		-DENABLE_DISTCC=OFF \
++		-DENABLE_DOCS=ON \
++		-DENABLE_ENCODE_PERF_TESTS=OFF \
++		-DENABLE_EXAMPLES=ON \
++		-DENABLE_GOMA=OFF \
++		-DENABLE_IDE_TEST_HOSTING=OFF \
++		-DENABLE_MMX=ON \
++		-DENABLE_NASM=OFF \
++		-DENABLE_NEON=ON \
++		-DENABLE_NEON_DOTPROD=ON \
++		-DENABLE_NEON_I8MM=ON \
++		-DENABLE_RVV=ON \
++		-DENABLE_SSE2=ON \
++		-DENABLE_SSE3=ON \
++		-DENABLE_SSE4_1=ON \
++		-DENABLE_SSE4_2=ON \
++		-DENABLE_SSE=ON \
++		-DENABLE_SSSE3=ON \
++		-DENABLE_SVE2=ON \
++		-DENABLE_SVE=ON \
++		-DENABLE_TESTDATA=ON \
++		-DENABLE_TESTS=ON \
++		-DENABLE_TOOLS=ON \
++		-DENABLE_VSX=ON \
++		-DENABLE_WERROR=OFF \
++		-DCMAKE_BUILD_TYPE=Release
++
++	# build package and install
++	$(MAKE) -C "$(BUILD_DIR)" -j $(JOBS)
++	$(MAKE) -C "$(BUILD_DIR)" -j 1 install
++
++	# compile a test program to verify the library is usable
++	"$(TARGET)-g++" -Wall -Wextra "$(TEST_FILE)" \
++		-o "$(PREFIX)/$(TARGET)/bin/test-$(PKG).exe" \
++		`"$(TARGET)-pkg-config" "$(PKG)" --cflags --libs`
++endef
+diff --git a/src/assimp.mk b/src/assimp.mk
+index c64cd0fe..3956f340 100644
+--- a/src/assimp.mk
++++ b/src/assimp.mk
+@@ -7,7 +7,7 @@ $(PKG)_IGNORE   :=
+ $(PKG)_VERSION  := 6.0.2
+ $(PKG)_CHECKSUM := d1822d9a19c9205d6e8bc533bf897174ddb360ce504680f294170cc1d6319751
+ $(PKG)_GH_CONF  := assimp/assimp/tags, v
+-$(PKG)_DEPS     := cc minizip
++$(PKG)_DEPS     := cc minizip-ng
+ 
+ define $(PKG)_BUILD
+     cd '$(BUILD_DIR)' && $(TARGET)-cmake \
+diff --git a/src/brotli.mk b/src/brotli.mk
+index 8bf25c51..7e6cb668 100644
+--- a/src/brotli.mk
++++ b/src/brotli.mk
+@@ -1,15 +1,29 @@
+ # This file is part of MXE. See LICENSE.md for licensing information.
+ 
+ PKG             := brotli
+-$(PKG)_WEBSITE  := https://github.com/google/brotli
+-$(PKG)_IGNORE   :=
++$(PKG)_WEBSITE  := https://brotli.org/
++$(PKG)_DESCR    := Brotli compression format
+ $(PKG)_VERSION  := 1.2.0
++$(PKG)_IGNORE   :=
+ $(PKG)_CHECKSUM := 816c96e8e8f193b40151dad7e8ff37b1221d019dbcb9c35cd3fadbfe6477dfec
+-$(PKG)_GH_CONF  := google/brotli/releases/tag,v,,
++$(PKG)_GH_CONF  := google/brotli/tags,v
+ $(PKG)_DEPS     := cc
+ 
+ define $(PKG)_BUILD
+-    cd '$(BUILD_DIR)' && '$(TARGET)-cmake' '$(SOURCE_DIR)'
+-    '$(TARGET)-cmake' --build '$(BUILD_DIR)' --config Release --target install
+-    rm -f '$(PREFIX)/$(TARGET)/bin/brotli.exe'
++
++	# configure package with cmake
++	cd "$(BUILD_DIR)" && "$(TARGET)-cmake" "$(SOURCE_DIR)" \
++		-DCMAKE_INSTALL_PREFIX="$(PREFIX)/$(TARGET)" \
++		-DCMAKE_PREFIX_PATH="$(PREFIX)/$(TARGET)" \
++		-DBUILD_SHARED_LIBS=$(CMAKE_SHARED_BOOL) \
++		-DBROTLI_BUILD_FOR_PACKAGE=OFF \
++		-DBROTLI_BUILD_TOOLS=ON \
++		-DBUILD_TESTING=ON \
++		-DCMAKE_BUILD_TYPE=Release
++
++	# build package and install
++	$(MAKE) -C "$(BUILD_DIR)" -j $(JOBS)
++	$(MAKE) -C "$(BUILD_DIR)" -j 1 install
++
++	# brotli alraedy compiles a test program into the prefix: brotli.exe
+ endef
+diff --git a/src/cegui.mk b/src/cegui.mk
+index d2bc3663..7d323357 100644
+--- a/src/cegui.mk
++++ b/src/cegui.mk
+@@ -10,7 +10,7 @@ $(PKG)_SUBDIR   := $(PKG)-$(PKG)-$($(PKG)_VERSION)
+ $(PKG)_FILE     := $(PKG)-$(PKG)-$($(PKG)_VERSION).tar.bz2
+ $(PKG)_URL      := https://bitbucket.org/$(PKG)/$(PKG)/get/$($(PKG)_VERSION).tar.bz2
+ $(PKG)_DEPS     := cc expat freeglut freeimage freetype fribidi glew \
+-                   glfw3 glm libxml2 minizip pcre xerces
++                   glfw3 glm libxml2 minizip-ng pcre xerces
+ 
+ define $(PKG)_UPDATE
+     $(WGET) -q -O- 'https://bitbucket.org/cegui/cegui/downloads' | \
+diff --git a/src/common/library.pc.in b/src/common/library.pc.in
+new file mode 100644
+index 00000000..d1d12949
+--- /dev/null
++++ b/src/common/library.pc.in
+@@ -0,0 +1,18 @@
++# Auto-generated by MXE for downstream use
++prefix=@PREFIX@
++exec_prefix=${prefix}
++libdir=${exec_prefix}/lib
++includedir=${prefix}/include
++
++Name: @NAME@
++Description: @DESCRIPTION@
++Version: @VERSION@
++
++Requires: @REQUIRES@
++Requires.private: @REQUIRES_PRIVATE@
++
++Libs: -L${libdir} @LIBS@
++Libs.private: @LIBS_PRIVATE@
++
++Cflags: -I${includedir} @CFLAGS@
++Cflags.private: @CFLAGS_PRIVATE@
+diff --git a/src/common/pkgconfig-generator.mk b/src/common/pkgconfig-generator.mk
+new file mode 100644
+index 00000000..43ce6b83
+--- /dev/null
++++ b/src/common/pkgconfig-generator.mk
+@@ -0,0 +1,81 @@
++# ----------------------------------------------------------------------
++# GENERATE_PC
++# ----------------------------------------------------------------------
++# Generates a pkg-config (.pc) file for a library that does not provide one.
++# This allows downstream builds and tools to discover the library and its
++# compiler/linker flags via pkg-config.
++#
++# Usage:
++# $(call GENERATE_PC, \
++#     <prefix>,           # Installation prefix (e.g., $(PREFIX)/$(TARGET))
++#     <name>,             # Package name (e.g., libraw)
++#     <description>,      # Package description
++#     <version>,          # Package version
++#     <requires>,         # Public Dependencies (space-separated)
++#     <requires_private>, # Private dependencies (optional)
++#     <libs>,             # Public linker flags (-L${libdir} already included)
++#     <libs_private>,     # Private linker flags (optional)
++#     <cflags>,           # Public Compiler flags (I${includedir} already included)
++#     <cflags_private>    # Private compiler flags (optional)
++# )
++#
++# Example:
++# $(call GENERATE_PC, \
++#     $(PREFIX)/$(TARGET), \
++#     libraw, \
++#     Raw image decoder library, \
++#     $($(PKG)_VERSION), \
++#     lcms2 zlib, \
++#     jasper jpeg, \
++#     -lraw_r -lstdc++ -fopenmp some/path, \
++#     -ljasper -ljpeg, \
++#     libraw lnextlib some/path, \
++#     -DLIBRAW_NODLL -DANOTHER_CFLAG \
++# )
++#
++# Notes:
++#   - Any field can be left empty; pkg-config will ignore it.
++#   - Template variables in library.pc.in are replaced with the provided values.
++#   - Public linker flags (Libs) already include -L${libdir}. Any additional paths containing slashes are added explicitly as -L/full/path.
++#   - Public compiler flags (Cflags) already include -I${includedir}. Any additional entries containing slashes are added explicitly as -I/full/path.
++# ----------------------------------------------------------------------
++include src/common/library.pc.in
++
++define GENERATE_PC
++  $(INSTALL) -d '$(strip $1)/lib/pkgconfig'; \
++  $(INSTALL) -d '$(strip $1)/share/pkgconfig'; \
++  pc_dir_lib="$(strip $1)/lib/pkgconfig"; \
++  pc_dir_share="$(strip $1)/share/pkgconfig"; \
++  pc_name="$(strip $2).pc"; \
++  pc_file_lib="$$pc_dir_lib/$$pc_name"; \
++  pc_file_share="$$pc_dir_share/$$pc_name"; \
++  \
++  existing_file=""; \
++  if [ -f "$$pc_file_lib" ]; then existing_file="$$pc_file_lib"; \
++  elif [ -f "$$pc_file_share" ]; then existing_file="$$pc_file_share"; \
++  fi; \
++  \
++  if [ -n "$$existing_file" ]; then \
++      if grep -q "MXE" "$$existing_file"; then \
++          echo "Overwriting MXE-generated $$existing_file"; \
++      else \
++          echo "Skipping upstream .pc file: $$existing_file (remove it if you want MXE to generate its own)"; \
++          exit 0; \
++      fi; \
++  else \
++      echo "Generating new .pc file"; \
++  fi; \
++  \
++  $(SED) \
++      -e 's|@PREFIX@|$(strip $1)|g' \
++      -e 's|@NAME@|$(strip $2)|g' \
++      -e 's|@DESCRIPTION@|$(strip $3)|g' \
++      -e 's|@VERSION@|$(strip $4)|g' \
++      -e 's|@REQUIRES@|$(strip $5)|g' \
++      -e 's|@REQUIRES_PRIVATE@|$(strip $6)|g' \
++      -e 's|@LIBS@|$(strip $(foreach f,$7,$(if $(findstring /,$f),-L$(f),$f)))|g' \
++      -e 's|@LIBS_PRIVATE@|$(strip $8)|g' \
++      -e 's|@CFLAGS@|$(strip $(foreach f,$(9),$(if $(findstring /,$f),-I$(f),-I$${includedir}/$(f))))|g' \
++      -e 's|@CFLAGS_PRIVATE@|$(strip ${10})|g' \
++      src/common/library.pc.in > "$$pc_file_lib"
++endef
+diff --git a/src/dav1d-test.c b/src/dav1d-test.c
+new file mode 100644
+index 00000000..c878a66d
+--- /dev/null
++++ b/src/dav1d-test.c
+@@ -0,0 +1,53 @@
++/*
++    This file is part of MXE. See LICENSE.md for licensing information.
++
++    Initial test file scaffold generated using the "gsrc" tool:
++    https://github.com/hkunz/git-fetcher
++
++    Compilation (pkg-config):
++
++    ./usr/bin/x86_64-w64-mingw32.static-gcc \
++        src/dav1d-test.c \
++        $(./usr/bin/x86_64-w64-mingw32.static-pkg-config --cflags --libs dav1d) \
++        -o usr/x86_64-w64-mingw32.static/bin/test-dav1d.exe
++
++    Compilation (manual):
++
++    ./usr/bin/x86_64-w64-mingw32.static-gcc \
++        src/dav1d-test.c \
++        -I usr/x86_64-w64-mingw32.static/include \
++        -L usr/x86_64-w64-mingw32.static/lib \
++        -ldav1d \
++        -o usr/x86_64-w64-mingw32.static/bin/test-dav1d.exe
++*/
++
++#include <stdio.h>
++#include <stdint.h>
++#include <dav1d/dav1d.h>
++
++int main() {
++    Dav1dSettings s;
++    Dav1dContext *c = NULL;
++    int ret;
++
++    // Initialize settings with defaults
++    dav1d_default_settings(&s);
++
++    // Optionally tweak settings
++    s.n_threads = 1; // single-thread for test
++
++    // Open decoder
++    ret = dav1d_open(&c, &s);
++    if (ret < 0) {
++        fprintf(stderr, "Failed to open dav1d decoder: %d\n", ret);
++        return 1;
++    }
++
++    printf("dav1d decoder initialized successfully!\n");
++
++    // Close decoder
++    dav1d_close(&c);
++
++    printf("dav1d decoder closed successfully!\n");
++    return 0;
++}
+diff --git a/src/dav1d.mk b/src/dav1d.mk
+new file mode 100644
+index 00000000..ff43d66e
+--- /dev/null
++++ b/src/dav1d.mk
+@@ -0,0 +1,38 @@
++# This file is part of MXE. See LICENSE.md for licensing information.
++# Initial package scaffold generated with the "gsrc" tool:
++# https://github.com/hkunz/git-fetcher
++
++PKG             := dav1d
++$(PKG)_WEBSITE  := https://www.videolan.org/projects/dav1d.html
++$(PKG)_DESCR    := Cross-platform AV1 decoder optimized for speed and accuracy
++$(PKG)_VERSION  := 1.5.3
++$(PKG)_IGNORE   :=
++$(PKG)_CHECKSUM := cbe212b02faf8c6eed5b6d55ef8a6e363aaab83f15112e960701a9c3df813686
++$(PKG)_GH_CONF  := videolan/dav1d/tags
++$(PKG)_DEPS     := cc meson-wrapper $(BUILD)~nasm
++
++define $(PKG)_BUILD
++
++	# configure package with meson
++	$(MXE_MESON_WRAPPER) $(MXE_MESON_OPTS) \
++		-Denable_asm=true \
++		-Denable_tools=true \
++		-Denable_examples=false \
++		-Denable_tests=true \
++		-Denable_seek_stress=false \
++		-Denable_docs=false \
++		-Dlogging=true \
++		-Dtestdata_tests=false \
++		-Dmacos_kperf=false \
++		--buildtype=release \
++		"$(BUILD_DIR)" "$(SOURCE_DIR)"
++
++	# build package and install
++	$(MXE_NINJA) -C "$(BUILD_DIR)" -j $(JOBS)
++	$(MXE_NINJA) -C "$(BUILD_DIR)" -j 1 install
++
++	# compile a test program to verify the library is usable
++	"$(TARGET)-g++" -Wall -Wextra "$(TEST_FILE)" \
++		-o "$(PREFIX)/$(TARGET)/bin/test-$(PKG).exe" \
++		`"$(TARGET)-pkg-config" "$(PKG)" --cflags --libs`
++endef
+diff --git a/src/de265-test.cpp b/src/de265-test.cpp
+new file mode 100644
+index 00000000..01bdb7d2
+--- /dev/null
++++ b/src/de265-test.cpp
+@@ -0,0 +1,87 @@
++/*
++    This file is part of MXE. See LICENSE.md for licensing information.
++
++    Initial test file scaffold generated using the "gsrc" tool:
++    https://github.com/hkunz/git-fetcher
++
++    Compilation (pkg-config):
++
++    ./usr/bin/x86_64-w64-mingw32.static-g++ \
++        src/de265-test.cpp \
++        -DLIBDE265_STATIC_BUILD \
++        $(./usr/bin/x86_64-w64-mingw32.static-pkg-config --cflags --libs libde265) \
++        -o usr/x86_64-w64-mingw32.static/bin/test-de265.exe
++
++    Compilation (manual):
++
++    ./usr/bin/x86_64-w64-mingw32.static-g++ \
++        src/de265-test.cpp \
++        -DLIBDE265_STATIC_BUILD \
++        -I usr/x86_64-w64-mingw32.static/include \
++        -L usr/x86_64-w64-mingw32.static/lib \
++        -lde265 \
++        -lstdc++ -lm -lwinpthread \
++        -o usr/x86_64-w64-mingw32.static/bin/test-de265.exe
++
++    The following program decodes testdata/girlshy.h265 which is a raw H.265 stream:
++*/
++
++#include <iostream>
++#include <fstream>
++#include <vector>
++
++#include <libde265/de265.h>
++
++int main()
++{
++    const char* filename = "girlshy.h265";
++
++    std::ifstream file(filename, std::ios::binary);
++    if (!file) {
++        std::cerr << "FAIL: cannot open test file\n";
++        return 1;
++    }
++
++    std::vector<uint8_t> buffer(
++        (std::istreambuf_iterator<char>(file)),
++        std::istreambuf_iterator<char>()
++    );
++
++    de265_decoder_context* ctx = de265_new_decoder();
++    if (!ctx) {
++        std::cerr << "FAIL: could not create decoder\n";
++        return 1;
++    }
++
++    de265_push_data(ctx, buffer.data(), buffer.size(), 0, nullptr);
++
++    int frame_count = 0;
++
++    while (true) {
++
++        de265_error err = de265_decode(ctx, nullptr);
++
++        if (err != DE265_OK && err != DE265_ERROR_WAITING_FOR_INPUT_DATA)
++            break;
++
++        const de265_image* img = de265_get_next_picture(ctx);
++
++        if (img) {
++            frame_count++;
++            de265_release_next_picture(ctx);
++        }
++
++        if (err == DE265_ERROR_WAITING_FOR_INPUT_DATA)
++            break;
++    }
++
++    de265_free_decoder(ctx);
++
++    if (frame_count > 0) {
++        std::cout << "SUCCESS: decoded " << frame_count << " frames\n";
++        return 0;
++    } else {
++        std::cerr << "FAIL: no frames decoded\n";
++        return 1;
++    }
++}
+diff --git a/src/de265.mk b/src/de265.mk
+new file mode 100644
+index 00000000..82fefab0
+--- /dev/null
++++ b/src/de265.mk
+@@ -0,0 +1,38 @@
++# This file is part of MXE. See LICENSE.md for licensing information.
++# Initial package scaffold generated with the "gsrc" tool:
++# https://github.com/hkunz/git-fetcher
++
++PKG             := de265
++$(PKG)_WEBSITE  := https://www.libde265.org/
++$(PKG)_DESCR    := Open h.265 video codec implementation.
++$(PKG)_VERSION  := 1.0.18
++$(PKG)_IGNORE   :=
++$(PKG)_CHECKSUM := 3fe36dd137ead3cb8ceb067165897c8898076537b563d53be4983ff6f35d773d
++$(PKG)_GH_CONF  := strukturag/libde265/tags,v
++$(PKG)_DEPS     := cc pkgconf libjpeg-turbo sdl2
++
++define $(PKG)_BUILD
++
++	# configure package with cmake
++	cd "$(BUILD_DIR)" && "$(TARGET)-cmake" "$(SOURCE_DIR)" \
++		-DCMAKE_INSTALL_PREFIX="$(PREFIX)/$(TARGET)" \
++		-DCMAKE_PREFIX_PATH="$(PREFIX)/$(TARGET)" \
++		-DBUILD_SHARED_LIBS=$(CMAKE_SHARED_BOOL) \
++		-DENABLE_DECODER=ON \
++		-DENABLE_ENCODER=OFF \
++		-DENABLE_INTERNAL_DEVELOPMENT_TOOLS=OFF \
++		-DENABLE_SDL=ON \
++		-DENABLE_SHERLOCK265=OFF \
++		-DUSE_IWYU=OFF \
++		-DWITH_FUZZERS=OFF \
++		-DCMAKE_BUILD_TYPE=Release
++
++	# build package and install
++	$(MAKE) -C "$(BUILD_DIR)" -j $(JOBS)
++	$(MAKE) -C "$(BUILD_DIR)" -j 1 install
++
++	# compile a test program to verify the library is usable
++	"$(TARGET)-g++" -Wall -Wextra "$(TEST_FILE)" -DLIBDE265_STATIC_BUILD \
++		-o "$(PREFIX)/$(TARGET)/bin/test-$(PKG).exe" \
++		`"$(TARGET)-pkg-config" "lib$(PKG)" --cflags --libs`
++endef
+diff --git a/src/farmhash-test.cpp b/src/farmhash-test.cpp
+new file mode 100644
+index 00000000..aa5a09a0
+--- /dev/null
++++ b/src/farmhash-test.cpp
+@@ -0,0 +1,47 @@
++/*
++    This file is part of MXE. See LICENSE.md for licensing information.
++
++    Initial test file scaffold generated using the "gsrc" tool:
++    https://github.com/hkunz/git-fetcher
++
++    Compilation (pkg-config):
++
++    ./usr/bin/x86_64-w64-mingw32.static-g++ \
++        src/farmhash-test.cpp \
++        $(./usr/bin/x86_64-w64-mingw32.static-pkg-config --cflags --libs farmhash) \
++        -o usr/x86_64-w64-mingw32.static/bin/test-farmhash.exe
++
++    Compilation (manual):
++
++    ./usr/bin/x86_64-w64-mingw32.static-g++ \
++        src/farmhash-test.cpp \
++        -I usr/x86_64-w64-mingw32.static/include \
++        -L usr/x86_64-w64-mingw32.static/lib \
++        -lfarmhash \
++        -o usr/x86_64-w64-mingw32.static/bin/test-farmhash.exe
++*/
++
++#include <iostream>
++#include "farmhash.h"
++
++int main() {
++    const char* testString = "Hello, FarmHash!";
++
++    // Compute 32-bit and 64-bit hashes
++    uint32_t hash32 = util::Hash32(testString, strlen(testString));
++    uint64_t hash64 = util::Hash64(testString, strlen(testString));
++
++    std::cout << "Test string: " << testString << "\n";
++    std::cout << "32-bit hash: " << hash32 << "\n";
++    std::cout << "64-bit hash: " << hash64 << "\n";
++
++    // Simple consistency check
++    uint64_t hash64_repeat = util::Hash64(testString, strlen(testString));
++    if (hash64 == hash64_repeat) {
++        std::cout << "64-bit hash is consistent\n";
++    } else {
++        std::cout << "64-bit hash mismatch\n";
++    }
++
++    return 0;
++}
+diff --git a/src/farmhash.mk b/src/farmhash.mk
+new file mode 100644
+index 00000000..39003c10
+--- /dev/null
++++ b/src/farmhash.mk
+@@ -0,0 +1,51 @@
++# This file is part of MXE. See LICENSE.md for licensing information.
++# Initial package scaffold generated with the "gsrc" tool:
++# https://github.com/hkunz/git-fetcher
++
++include src/common/pkgconfig-generator.mk
++
++PKG             := farmhash
++$(PKG)_WEBSITE  := https://github.com/google/farmhash.git
++$(PKG)_DESCR    := Fast, non-cryptographic hash functions for strings and binary data.
++$(PKG)_VERSION  := master
++$(PKG)_IGNORE   :=
++$(PKG)_CHECKSUM := 88a7846c155001bc5d3a716cac2b696bdd558b9b3daca643104fb32dcb1bef75
++$(PKG)_GH_CONF  := google/farmhash/tags
++$(PKG)_DEPS     := cc
++
++define $(PKG)_BUILD
++
++	# Patch: Rename static variable 'data' -> 'mydata'
++	# Reason: 'data' conflicts with std::data() in C++17+,
++	# causing ambiguous reference errors when cross-compiling with MXE.
++	tmp=$(mktemp) || exit 1
++	$(SED) "s/\bdata\b/mydata/g" "$(SOURCE_DIR)/src/farmhash.cc" > "$tmp" && mv "$tmp" "$(SOURCE_DIR)/src/farmhash.cc"
++
++	# Configure package
++	cd "$(BUILD_DIR)" && "$(SOURCE_DIR)/configure" \
++		$(MXE_CONFIGURE_OPTS) \
++		--host="$(TARGET)" \
++		--prefix="$(PREFIX)/$(TARGET)"
++
++	# Build package and install
++	$(MAKE) -C "$(BUILD_DIR)" -j "$(JOBS)"
++	$(MAKE) -C "$(BUILD_DIR)" -j 1 install
++
++	rm -rf "$(PREFIX)/$(TARGET)/share/doc/farmhash"
++
++	# Only needed if the project does not ship a .pc file
++	$(call GENERATE_PC, \
++		"$(PREFIX)/$(TARGET)", \
++		"$(PKG)", \
++		"$($(PKG)_DESCR)", \
++		"$($(PKG)_VERSION)", \
++		, \
++		, \
++		-lfarmhash, \
++	)
++
++	# compile a test program to verify the library is usable
++	"$(TARGET)-g++" -Wall -Wextra "$(TEST_FILE)" \
++		-o "$(PREFIX)/$(TARGET)/bin/test-$(PKG).exe" \
++		`"$(TARGET)-pkg-config" "$(PKG)" --cflags --libs`
++endef
+diff --git a/src/heif-test.cpp b/src/heif-test.cpp
+new file mode 100644
+index 00000000..69b38470
+--- /dev/null
++++ b/src/heif-test.cpp
+@@ -0,0 +1,82 @@
++/*
++    This file is part of MXE. See LICENSE.md for licensing information.
++
++    Initial test file scaffold generated using the "gsrc" tool:
++    https://github.com/hkunz/git-fetcher
++
++    Compilation (pkg-config):
++
++    ./usr/bin/x86_64-w64-mingw32.static-g++ \
++        src/heif-test.cpp \
++        $(./usr/bin/x86_64-w64-mingw32.static-pkg-config --cflags --libs libheif) \
++        -o usr/x86_64-w64-mingw32.static/bin/test-heif.exe
++
++    Compilation (manual):
++
++    ./usr/bin/x86_64-w64-mingw32.static-g++ \
++        src/heif-test.cpp \
++        -DLIBHEIF_STATIC_BUILD \
++        -DHEIF_WITH_OMAF=1 \
++        -DLIBDE265_STATIC_BUILD \
++        -I usr/x86_64-w64-mingw32.static/include \
++        -L usr/x86_64-w64-mingw32.static/lib \
++        -static -lheif \
++        -lx264 -lx265 -lx265_main10 -lx265_main12 \
++        -lde265 \
++        -laom -lwebp -lsharpyuv -lopenjp2 -lopenh264 -lz \
++        -lpthread -ldav1d \
++        -lole32 -luuid -lws2_32 -lstdc++ \
++        -o usr/x86_64-w64-mingw32.static/bin/test-heif.exe
++*/
++
++#include <libheif/heif.h>
++#include <cstdio>
++
++int main() {
++    const char* filename = "example.heic"; // example file from heif's repository: https://github.com/hkunz/libheif/blob/master/examples/example.heic
++
++    heif_context* ctx = heif_context_alloc();
++    if (!ctx) {
++        printf("Failed to allocate HEIF context\n");
++        return 1;
++    }
++
++    heif_error err = heif_context_read_from_file(ctx, filename, nullptr);
++    if (err.code != heif_error_Ok) {
++        printf("Error reading HEIF file: %s\n", err.message);
++        heif_context_free(ctx);
++        return 1;
++    }
++
++    heif_image_handle* handle = nullptr;
++    err = heif_context_get_primary_image_handle(ctx, &handle);
++    if (err.code != heif_error_Ok) {
++        printf("Error getting primary image handle: %s\n", err.message);
++        heif_context_free(ctx);
++        return 1;
++    }
++
++    int width = heif_image_handle_get_width(handle);
++    int height = heif_image_handle_get_height(handle);
++    printf("Image loaded successfully: %dx%d\n", width, height);
++
++    heif_image* img = nullptr;
++    err = heif_decode_image(handle, &img, heif_colorspace_undefined, heif_chroma_undefined, nullptr);
++
++    if (err.code != heif_error_Ok) {
++        printf("Failed to decode image: %s\n", err.message);
++        heif_image_handle_release(handle);
++        heif_context_free(ctx);
++        return 1;
++    }
++
++    heif_colorspace cs = heif_image_get_colorspace(img);
++    heif_chroma chroma = heif_image_get_chroma_format(img);
++    printf("Colorspace: %d, Chroma: %d\n", cs, chroma);
++
++    heif_image_release(img);
++    heif_image_handle_release(handle);
++    heif_context_free(ctx);
++
++    return 0;
++}
+diff --git a/src/heif.mk b/src/heif.mk
+new file mode 100644
+index 00000000..37f76212
+--- /dev/null
++++ b/src/heif.mk
+@@ -0,0 +1,107 @@
++# This file is part of MXE. See LICENSE.md for licensing information.
++# Initial package scaffold generated with the "gsrc" tool:
++# https://github.com/hkunz/git-fetcher
++
++PKG             := heif
++$(PKG)_WEBSITE  := https://github.com/strukturag/libheif.git
++$(PKG)_DESCR    := libheif is an HEIF and AVIF file format decoder and encoder.
++$(PKG)_VERSION  := 1.21.2
++$(PKG)_IGNORE   :=
++$(PKG)_CHECKSUM := 79996de959d28ca82ef070c382304683f5cdaf04cbe2953a74587160a3710a36
++$(PKG)_GH_CONF  := strukturag/libheif/tags,v
++$(PKG)_DEPS     := cc aom brotli dav1d ffmpeg de265 openjph openh264 openjpeg libpng svtav1 tiff pthreads uvg266 x264 x265 zlib kvazaar libwebp vvdec vvenc
++
++# libsharpyuv is built and installed as part of libwebp
++
++define $(PKG)_BUILD
++
++	# Fix for issue: https://github.com/strukturag/libheif/issues/1756
++	# On Windows, libheif must be built with LIBDE265_STATIC_BUILD to match the static libde265 build and avoid DLL import (__imp_de265_*) symbol mismatches.
++	# This patch introduces target_compile_definitions(heif PRIVATE LIBDE265_STATIC_BUILD)
++
++	cd "$(SOURCE_DIR)" && \
++	FILE="CMakeLists.txt" && \
++	grep -q LIBDE265_STATIC_BUILD "$$FILE" || \
++	awk '\
++	/add_library\(heif/ {\
++		print;\
++		print "target_compile_definitions(heif PRIVATE LIBDE265_STATIC_BUILD)";\
++		next\
++	}\
++	{ print }\
++	' "$$FILE" > "$$FILE.tmp" && \
++	mv "$$FILE.tmp" "$$FILE"
++
++	# configure package with cmake
++	cd "$(BUILD_DIR)" && "$(TARGET)-cmake" "$(SOURCE_DIR)" \
++		-DCMAKE_INSTALL_PREFIX="$(PREFIX)/$(TARGET)" \
++		-DCMAKE_PREFIX_PATH="$(PREFIX)/$(TARGET)" \
++		-DBUILD_SHARED_LIBS=$(CMAKE_SHARED_BOOL) \
++		-DCMAKE_C_FLAGS="-DLIBDE265_STATIC_BUILD" \
++		-DCMAKE_CXX_FLAGS="-DLIBDE265_STATIC_BUILD" \
++		-DBUILD_DOCUMENTATION=ON \
++		-DBUILD_TESTING=OFF \
++		-DENABLE_COVERAGE=OFF \
++		-DENABLE_EXPERIMENTAL_FEATURES=OFF \
++		-DENABLE_EXPERIMENTAL_MINI_FORMAT=OFF \
++		-DENABLE_MULTITHREADING_SUPPORT=ON \
++		-DENABLE_PARALLEL_TILE_DECODING=ON \
++		-DENABLE_PLUGIN_LOADING=OFF \
++		-DWITH_AOM_DECODER=ON \
++		-DWITH_AOM_DECODER_PLUGIN=OFF \
++		-DWITH_AOM_ENCODER=ON \
++		-DWITH_AOM_ENCODER_PLUGIN=OFF \
++		-DWITH_DAV1D=ON \
++		-DWITH_DAV1D_PLUGIN=OFF \
++		-DWITH_EXAMPLES=OFF \
++		-DWITH_EXAMPLE_HEIF_THUMB=OFF \
++		-DWITH_EXAMPLE_HEIF_VIEW=OFF \
++		-DWITH_FFMPEG_DECODER=OFF \
++		-DWITH_FFMPEG_DECODER_PLUGIN=OFF \
++		-DWITH_FUZZERS=OFF \
++		-DWITH_GDK_PIXBUF=ON \
++		-DWITH_HEADER_COMPRESSION=OFF \
++		-DWITH_JPEG_DECODER=OFF \
++		-DWITH_JPEG_DECODER_PLUGIN=OFF \
++		-DWITH_JPEG_ENCODER=OFF \
++		-DWITH_JPEG_ENCODER_PLUGIN=OFF \
++		-DWITH_KVAZAAR=OFF \
++		-DWITH_KVAZAAR_PLUGIN=OFF \
++		-DLIBDE265_STATIC=ON \
++		-DLIBDE265_DLL_IMPORT=OFF \
++		-DWITH_LIBDE265=ON \
++		-DWITH_LIBDE265_PLUGIN=OFF \
++		-DWITH_LIBSHARPYUV=ON \
++		-DWITH_LIBSHARPYUV_INTERNAL=OFF \
++		-DWITH_OPENJPH_ENCODER=OFF \
++		-DWITH_OPENJPH_ENCODER_PLUGIN=OFF \
++		-DWITH_RAV1E=OFF \
++		-DWITH_RAV1E_PLUGIN=OFF \
++		-DWITH_REDUCED_VISIBILITY=ON \
++		-DWITH_UNCOMPRESSED_CODEC=OFF \
++		-DWITH_UVG266=OFF \
++		-DWITH_UVG266_PLUGIN=OFF \
++		-DWITH_VVDEC=OFF \
++		-DWITH_VVDEC_PLUGIN=OFF \
++		-DWITH_VVENC=OFF \
++		-DWITH_VVENC_PLUGIN=OFF \
++		-DWITH_WEBCODECS=OFF \
++		-DWITH_X264=OFF \
++		-DWITH_X264_PLUGIN=OFF \
++		-DX265_STATIC_LIB=ON \
++		-DWITH_X265=OFF \
++		-DWITH_X265_PLUGIN=OFF \
++		-DCMAKE_BUILD_TYPE=Release
++
++	# build package and install
++	$(MAKE) -C "$(BUILD_DIR)" -j $(JOBS)
++	$(MAKE) -C "$(BUILD_DIR)" -j 1 install
++
++
++	# compile a test program to verify the library is usable
++	"$(TARGET)-g++" -Wall -Wextra "$(TEST_FILE)" \
++		-o "$(PREFIX)/$(TARGET)/bin/test-$(PKG).exe" \
++		`"$(TARGET)-pkg-config" "libheif" --cflags --libs`
++
++	cp "$(SOURCE_DIR)/examples/example.heic" "$(PREFIX)/$(TARGET)/bin/"
++endef
+diff --git a/src/highway-test.cpp b/src/highway-test.cpp
+new file mode 100644
+index 00000000..86dcb43a
+--- /dev/null
++++ b/src/highway-test.cpp
+@@ -0,0 +1,79 @@
++/*
++    This file is part of MXE. See LICENSE.md for licensing information.
++
++    Initial test file scaffold generated using the "gsrc" tool:
++    https://github.com/hkunz/git-fetcher
++
++    Compilation (pkg-config):
++
++    ./usr/bin/x86_64-w64-mingw32.static-g++ \
++        src/highway-test.cpp \
++        $(./usr/bin/x86_64-w64-mingw32.static-pkg-config --cflags --libs libhwy) \
++        -o usr/x86_64-w64-mingw32.static/bin/test-highway.exe
++
++    Compilation (manual):
++
++    ./usr/bin/x86_64-w64-mingw32.static-g++ \
++        src/highway-test.cpp \
++        -I usr/x86_64-w64-mingw32.static/include/ \
++        -L usr/x86_64-w64-mingw32.static/lib/ \
++        -lhwy \
++        -o usr/x86_64-w64-mingw32.static/bin/test-highway.exe
++*/
++
++#include <hwy/highway.h>
++#include <iostream>
++
++HWY_BEFORE_NAMESPACE();
++namespace hwy {
++namespace HWY_NAMESPACE {
++
++void TestSIMD() {
++    HWY_CAPPED(float, 4) d;           // define a small 4-lane SIMD vector
++
++    // Initialize two vectors
++    auto v1 = Set(d, 1.0f);            // all lanes = 1.0
++    auto v2 = Set(d, 2.0f);            // all lanes = 2.0
++
++    alignas(16) float lanes[4] = {};  // aligned array for storing
++
++    // Store and print v1
++    Store(v1, d, lanes);
++    std::cout << "v1 lanes: ";
++    for (int i = 0; i < 4; ++i) std::cout << lanes[i] << " ";
++    std::cout << std::endl;
++
++    // Store and print v2
++    Store(v2, d, lanes);
++    std::cout << "v2 lanes: ";
++    for (int i = 0; i < 4; ++i) std::cout << lanes[i] << " ";
++    std::cout << std::endl;
++
++    // Arithmetic: add vectors
++    auto sum = Add(v1, v2);
++    Store(sum, d, lanes);
++    std::cout << "Sum lanes: ";
++    for (int i = 0; i < 4; ++i) std::cout << lanes[i] << " ";
++    std::cout << std::endl;
++
++    // Min / Max
++    auto minv = Min(v1, v2);
++    auto maxv = Max(v1, v2);
++    Store(minv, d, lanes);
++    std::cout << "Min lanes: ";
++    for (int i = 0; i < 4; ++i) std::cout << lanes[i] << " ";
++    std::cout << std::endl;
++    Store(maxv, d, lanes);
++    std::cout << "Max lanes: ";
++    for (int i = 0; i < 4; ++i) std::cout << lanes[i] << " ";
++    std::cout << std::endl;
++}
++
++}  // namespace HWY_NAMESPACE
++}  // namespace hwy
++HWY_AFTER_NAMESPACE();
++
++int main() {
++    hwy::HWY_NAMESPACE::TestSIMD();
++    return 0;
++}
+diff --git a/src/highway.mk b/src/highway.mk
+new file mode 100644
+index 00000000..dfe2455e
+--- /dev/null
++++ b/src/highway.mk
+@@ -0,0 +1,49 @@
++# This file is part of MXE. See LICENSE.md for licensing information.
++# Initial package scaffold generated with the "gsrc" tool:
++# https://github.com/hkunz/git-fetcher
++
++PKG             := highway
++$(PKG)_WEBSITE  := https://google.github.io/highway/
++$(PKG)_DESCR    := C++ library that provides portable SIMD/vector intrinsics
++$(PKG)_VERSION  := 1.3.0
++$(PKG)_IGNORE   :=
++$(PKG)_CHECKSUM := 07b3c1ba2c1096878a85a31a5b9b3757427af963b1141ca904db2f9f4afe0bc2
++$(PKG)_GH_CONF  := google/highway/tags
++$(PKG)_DEPS     := cc pthreads
++
++define $(PKG)_BUILD
++
++	# configure package with cmake
++	cd "$(BUILD_DIR)" && "$(TARGET)-cmake" "$(SOURCE_DIR)" \
++		-DCMAKE_INSTALL_PREFIX="$(PREFIX)/$(TARGET)" \
++		-DCMAKE_PREFIX_PATH="$(PREFIX)/$(TARGET)" \
++		-DBUILD_SHARED_LIBS=$(CMAKE_SHARED_BOOL) \
++		-DBUILD_GMOCK=ON \
++		-DBUILD_TESTING=OFF \
++		-DHWY_CMAKE_ARM7=OFF \
++		-DHWY_CMAKE_HEADER_ONLY=OFF \
++		-DHWY_CMAKE_LASX=ON \
++		-DHWY_CMAKE_LSX=ON \
++		-DHWY_CMAKE_RVV=ON \
++		-DHWY_CMAKE_SSE2=OFF \
++		-DHWY_DISABLE_FUTEX=OFF \
++		-DHWY_ENABLE_CONTRIB=OFF \
++		-DHWY_ENABLE_EXAMPLES=OFF \
++		-DHWY_ENABLE_INSTALL=ON \
++		-DHWY_ENABLE_TESTS=OFF \
++		-DHWY_FORCE_STATIC_LIBS=ON \
++		-DHWY_SYSTEM_GTEST=OFF \
++		-DHWY_TEST_STANDALONE=OFF \
++		-DHWY_WARNINGS_ARE_ERRORS=OFF \
++		-DINSTALL_GTEST=ON \
++		-DCMAKE_BUILD_TYPE=Release
++
++	# build package and install
++	$(MAKE) -C "$(BUILD_DIR)" -j $(JOBS)
++	$(MAKE) -C "$(BUILD_DIR)" -j 1 install
++
++	# compile a test program to verify the library is usable
++	"$(TARGET)-g++" -Wall -Wextra "$(TEST_FILE)" \
++		-o "$(PREFIX)/$(TARGET)/bin/test-$(PKG).exe" \
++		`"$(TARGET)-pkg-config" "libhwy" --cflags --libs`
++endef
+diff --git a/src/imath.mk b/src/imath.mk
+index 20a337a0..50ddbe2c 100644
+--- a/src/imath.mk
++++ b/src/imath.mk
+@@ -1,25 +1,40 @@
+ # This file is part of MXE. See LICENSE.md for licensing information.
+ 
+ PKG             := imath
+-$(PKG)_WEBSITE  := https://github.com/AcademySoftwareFoundation/Imath
+-$(PKG)_IGNORE   :=
++$(PKG)_WEBSITE  := https://github.com/AcademySoftwareFoundation/Imath.git
++$(PKG)_DESCR    := Imath is a C++ and python library of 2D and 3D vector, matrix, and math operations for computer graphics
+ $(PKG)_VERSION  := 3.2.2
+-$(PKG)_FILE     := Imath-$($(PKG)_VERSION).tar.gz
++$(PKG)_IGNORE   :=
+ $(PKG)_CHECKSUM := b4275d83fb95521510e389b8d13af10298ed5bed1c8e13efd961d91b1105e462
+ $(PKG)_GH_CONF  := AcademySoftwareFoundation/Imath/tags,v
+-$(PKG)_DEPS     := cc
++$(PKG)_DEPS     := cc boost
+ 
+ define $(PKG)_BUILD
+-    mkdir -p '$(BUILD_DIR)'
+-    cd '$(BUILD_DIR)' && '$(TARGET)-cmake' '$(SOURCE_DIR)' \
+-        -DBUILD_SHARED_LIBS=$(CMAKE_SHARED_BOOL) \
+-        -DCMAKE_INSTALL_PREFIX='$(PREFIX)/$(TARGET)' \
+-        -DCMAKE_BUILD_TYPE=Release
+-    $(MAKE) -C '$(BUILD_DIR)' -j '$(JOBS)'
+-    $(MAKE) -C '$(BUILD_DIR)' -j 1 install
++	# configure package with cmake
++	cd "$(BUILD_DIR)" && "$(TARGET)-cmake" "$(SOURCE_DIR)" \
++		-DCMAKE_INSTALL_PREFIX="$(PREFIX)/$(TARGET)" \
++		-DCMAKE_PREFIX_PATH="$(PREFIX)/$(TARGET)" \
++		-DBUILD_SHARED_LIBS=$(CMAKE_SHARED_BOOL) \
++		-DBUILD_TESTING=ON \
++		-DBUILD_WEBSITE=OFF \
++		-DIMATH_ENABLE_LARGE_STACK=OFF \
++		-DIMATH_HALF_USE_LOOKUP_TABLE=ON \
++		-DIMATH_INSTALL=ON \
++		-DIMATH_INSTALL_PKG_CONFIG=ON \
++		-DIMATH_INSTALL_SYM_LINK=ON \
++		-DIMATH_USE_CLANG_TIDY=OFF \
++		-DIMATH_USE_DEFAULT_VISIBILITY=OFF \
++		-DIMATH_USE_NOEXCEPT=ON \
++		-DPYBIND11=OFF \
++		-DPYTHON=OFF \
++		-DCMAKE_BUILD_TYPE=Release
+ 
+-    '$(TARGET)-g++' \
+-        '$(TEST_FILE)' -o '$(PREFIX)/$(TARGET)/bin/test-imath.exe' \
+-        `'$(TARGET)-pkg-config' Imath --cflags --libs`
++	# build package and install
++	$(MAKE) -C "$(BUILD_DIR)" -j $(JOBS)
++	$(MAKE) -C "$(BUILD_DIR)" -j 1 install
+ 
++	# compile a test program to verify the library is usable
++	"$(TARGET)-g++" -Wall -Wextra "$(TEST_FILE)" \
++		-o "$(PREFIX)/$(TARGET)/bin/test-$(PKG).exe" \
++		`"$(TARGET)-pkg-config" "Imath" --cflags --libs`
+ endef
+diff --git a/src/jemalloc-test.cpp b/src/jemalloc-test.cpp
+new file mode 100644
+index 00000000..8dd9afa3
+--- /dev/null
++++ b/src/jemalloc-test.cpp
+@@ -0,0 +1,48 @@
++/*
++    This file is part of MXE. See LICENSE.md for licensing information.
++
++    Initial test file scaffold generated using the "gsrc" tool:
++    https://github.com/hkunz/git-fetcher
++
++    Compilation (pkg-config):
++
++    ./usr/bin/x86_64-w64-mingw32.static-g++ \
++        src/jemalloc-test.cpp \
++        $(./usr/bin/x86_64-w64-mingw32.static-pkg-config --cflags --libs jemalloc) \
++        -o usr/x86_64-w64-mingw32.static/bin/test-jemalloc.exe
++
++    Compilation (manual):
++
++    ./usr/bin/x86_64-w64-mingw32.static-g++ \
++        src/jemalloc-test.cpp \
++        -I usr/x86_64-w64-mingw32.static/include \
++        -L usr/x86_64-w64-mingw32.static/lib \
++        -ljemalloc \
++        -o usr/x86_64-w64-mingw32.static/bin/test-jemalloc.exe
++*/
++
++#include <cstdio>
++#include <cstdlib>
++#include <cstring>
++#include <jemalloc/jemalloc.h>
++
++int main() {
++    printf("jemalloc test start\n");
++
++    for (int i = 0; i < 5000; i++) {
++        void* p = je_mallocx(32 + (i % 128), 0);
++        if (!p) {
++            printf("alloc failed\n");
++            return 1;
++        }
++        memset(p, 0xA5, 32);
++        je_dallocx(p, 0);
++    }
++
++    printf("basic stress OK\n");
++
++    je_malloc_stats_print(nullptr, nullptr, nullptr);
++
++    printf("done\n");
++    return 0;
++}
+diff --git a/src/jemalloc.mk b/src/jemalloc.mk
+new file mode 100644
+index 00000000..b8bf8f91
+--- /dev/null
++++ b/src/jemalloc.mk
+@@ -0,0 +1,33 @@
++# This file is part of MXE. See LICENSE.md for licensing information.
++# Initial package scaffold generated with the "gsrc" tool:
++# https://github.com/hkunz/git-fetcher
++
++PKG             := jemalloc
++$(PKG)_WEBSITE  := http://jemalloc.net/
++$(PKG)_DESCR    := Custom ref :-5.3.0 (no upstream description)
++$(PKG)_VERSION  := 5.3.0
++$(PKG)_IGNORE   :=
++$(PKG)_CHECKSUM := ef6f74fd45e95ee4ef7f9e19ebe5b075ca6b7fbe0140612b2a161abafb7ee179
++$(PKG)_GH_CONF  := jemalloc/jemalloc/tags
++$(PKG)_DEPS     := cc
++
++define $(PKG)_BUILD
++
++	# generate configure script first
++	cd "$(SOURCE_DIR)" && ./autogen.sh
++
++	# Configure package
++	cd "$(BUILD_DIR)" && "$(SOURCE_DIR)/configure" \
++		$(MXE_CONFIGURE_OPTS) \
++		--host="$(TARGET)" \
++		--prefix="$(PREFIX)/$(TARGET)"
++
++	# build package and install
++	$(MAKE) -C "$(BUILD_DIR)" -j $(JOBS)
++	$(MAKE) -C "$(BUILD_DIR)" -j 1 install
++
++	# compile a test program to verify the library is usable
++	"$(TARGET)-g++" -Wall -Wextra "$(TEST_FILE)" \
++		-o "$(PREFIX)/$(TARGET)/bin/test-$(PKG).exe" \
++		`"$(TARGET)-pkg-config" "$(PKG)" --cflags --libs`
++endef
+diff --git a/src/jxl-1-fixes.patch b/src/jxl-1-fixes.patch
+new file mode 100644
+index 00000000..e4a3931a
+--- /dev/null
++++ b/src/jxl-1-fixes.patch
+@@ -0,0 +1,103 @@
++diff --git a/lib/jxl.cmake b/lib/jxl.cmake
++index 59b2cca4..8ffd74e0 100644
++--- a/lib/jxl.cmake
+++++ b/lib/jxl.cmake
++@@ -27,9 +27,14 @@ if (JPEGXL_ENABLE_TRANSCODE_JPEG OR JPEGXL_ENABLE_BOXES)
++ list(APPEND JPEGXL_DEC_INTERNAL_LIBS brotlidec brotlicommon)
++ endif()
++
+++# Patch lib/jxl.cmake:
+++# Add brotlicommon to JPEGXL_INTERNAL_LIBS because static linking in MXE
+++# does not automatically pull transitive Brotli dependencies. Without this,
+++# linking fails with undefined Brotli symbols.
++ set(JPEGXL_INTERNAL_LIBS
++   ${JPEGXL_DEC_INTERNAL_LIBS}
++   brotlienc
+++  brotlicommon
++ )
++
++ if (JPEGXL_ENABLE_TRANSCODE_JPEG)
++diff --git a/lib/jxl/libjxl.pc.in b/lib/jxl/libjxl.pc.in
++index f5a9c436..ea02c496 100644
++--- a/lib/jxl/libjxl.pc.in
+++++ b/lib/jxl/libjxl.pc.in
++@@ -7,7 +7,7 @@ Name: libjxl
++ Description: Loads and saves JPEG XL files
++ Version: @JPEGXL_LIBRARY_VERSION@
++ @JPEGXL_REQUIRES_TYPE@: @JPEGXL_LIBRARY_REQUIRES@
++-Libs: -L${libdir} -ljxl @JPEGXL_PUBLIC_LIBS@
+++Libs: -L${libdir} -ljxl -ljxl_threads @JPEGXL_PUBLIC_LIBS@
++ Libs.private: @JPEGXL_PRIVATE_LIBS@
++ Cflags: -I${includedir}
++ Cflags.private: -DJXL_STATIC_DEFINE
++diff --git a/third_party/CMakeLists.txt b/third_party/CMakeLists.txt
++index efe3e56f..51466049 100644
++--- a/third_party/CMakeLists.txt
+++++ b/third_party/CMakeLists.txt
++@@ -33,7 +33,11 @@ if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/highway/CMakeLists.txt" AND
++ else()
++   find_package(HWY 1.0.7)
++   if (NOT HWY_FOUND)
++-    message(FATAL_ERROR
+++    # Patch third_party/CMakeLists.txt:
+++    # Replace all FATAL_ERROR with STATUS so missing optional third-party
+++    # dependencies do not abort the build. This allows MXE to rely on
+++    # system-provided libraries instead of bundled ones.
+++    message(STATUS
++         "Highway library (hwy) not found. Install libhwy-dev or download it "
++         "to third_party/highway from https://github.com/google/highway . "
++         "Highway is required to build JPEG XL. You can run "
++@@ -50,7 +54,7 @@ if (NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/brotli/c/include/brotli/decode.h" OR
++     JPEGXL_FORCE_SYSTEM_BROTLI)
++   find_package(Brotli)
++   if (NOT Brotli_FOUND)
++-    message(FATAL_ERROR
+++    message(STATUS
++         "Brotli not found, install brotli-dev or download brotli source code to"
++         " third_party/brotli from https://github.com/google/brotli. You can use"
++         " ${PROJECT_SOURCE_DIR}/deps.sh to download this dependency.")
++@@ -97,7 +101,7 @@ endif()
++ # *cms
++ if (JPEGXL_ENABLE_SKCMS)
++   if( NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/skcms/skcms.h" )
++-    message(FATAL_ERROR "Please run ${PROJECT_SOURCE_DIR}/deps.sh to fetch the "
+++    message(STATUS "Please run ${PROJECT_SOURCE_DIR}/deps.sh to fetch the "
++             "build dependencies.")
++   endif()
++   include(skcms.cmake)
++@@ -108,7 +112,7 @@ if (JPEGXL_ENABLE_VIEWERS OR NOT JPEGXL_ENABLE_SKCMS OR JPEGXL_ENABLE_PLUGINS)
++   if( NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/lcms/.git" OR JPEGXL_FORCE_SYSTEM_LCMS2 )
++     find_package(LCMS2 2.12)
++     if ( NOT LCMS2_FOUND )
++-      message(FATAL_ERROR "Please install lcms2 or run git submodule update --init")
+++      message(STATUS "Please install lcms2 or run git submodule update --init")
++     endif ()
++   else()
++     include(lcms2.cmake)
++@@ -120,7 +124,7 @@ endif()
++ # libpng
++ if (JPEGXL_BUNDLE_LIBPNG AND EMSCRIPTEN)
++   if (NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/libpng/CMakeLists.txt")
++-  message(FATAL_ERROR "Please run ${PROJECT_SOURCE_DIR}/deps.sh to fetch the "
+++  message(STATUS "Please run ${PROJECT_SOURCE_DIR}/deps.sh to fetch the "
++           "build dependencies.")
++   endif()
++   file(COPY "${CMAKE_CURRENT_SOURCE_DIR}/libpng/scripts/pnglibconf.h.prebuilt" DESTINATION "${CMAKE_CURRENT_SOURCE_DIR}/libpng")
++@@ -132,7 +136,7 @@ if (JPEGXL_BUNDLE_LIBPNG AND EMSCRIPTEN)
++   set(PNG_LIBRARIES "" PARENT_SCOPE)
++ elseif (JPEGXL_BUNDLE_LIBPNG)
++   if (NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/libpng/CMakeLists.txt")
++-    message(FATAL_ERROR "Please run ${PROJECT_SOURCE_DIR}/deps.sh to fetch the "
+++    message(STATUS "Please run ${PROJECT_SOURCE_DIR}/deps.sh to fetch the "
++             "build dependencies.")
++   endif()
++   add_subdirectory(zlib)
++@@ -166,7 +170,7 @@ endif()
++ # sjpeg
++ if (JPEGXL_ENABLE_SJPEG)
++   if (NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/sjpeg/CMakeLists.txt")
++-    message(FATAL_ERROR "Please run ${PROJECT_SOURCE_DIR}/deps.sh to fetch the "
+++    message(STATUS "Please run ${PROJECT_SOURCE_DIR}/deps.sh to fetch the "
++             "build dependencies.")
++   endif()
++   include(sjpeg.cmake)
+diff --git a/src/jxl-test.cpp b/src/jxl-test.cpp
+new file mode 100644
+index 00000000..14bcbab0
+--- /dev/null
++++ b/src/jxl-test.cpp
+@@ -0,0 +1,117 @@
++/*
++    This file is part of MXE. See LICENSE.md for licensing information.
++
++    Initial test file scaffold generated using the "gsrc" tool:
++    https://github.com/hkunz/git-fetcher
++
++    Compilation (pkg-config):
++
++    ./usr/bin/x86_64-w64-mingw32.static-g++ \
++        src/jxl-test.cpp \
++        $(./usr/bin/x86_64-w64-mingw32.static-pkg-config --cflags --libs libjxl) \
++        -o usr/x86_64-w64-mingw32.static/bin/test-jxl.exe
++
++    Compilation (manual):
++
++    ./usr/bin/x86_64-w64-mingw32.static-g++ \
++        src/jxl-test.cpp \
++        -I usr/x86_64-w64-mingw32.static/include \
++        -L usr/x86_64-w64-mingw32.static/lib \
++        -DJXL_STATIC_DEFINE \
++        -o usr/x86_64-w64-mingw32.static/bin/test-jxl.exe \
++        -ljxl -ljxl_threads -ljxl_cms \
++        -lbrotlienc -lbrotlidec -lbrotlicommon \
++        -lhwy -llcms2 \
++        -lwinpthread -lm -lstdc++ \
++        -o usr/x86_64-w64-mingw32.static/bin/test-jxl.exe
++*/
++
++#include <jxl/encode.h>
++#include <jxl/decode.h>
++#include <jxl/thread_parallel_runner.h>
++#include <jxl/types.h>
++#include <stdio.h>
++#include <string.h>
++
++int main() {
++    // Signature test (matches one of your missing refs)
++    const uint8_t fake_data[12] = {0};
++    JxlSignature sig = JxlSignatureCheck(fake_data, sizeof(fake_data));
++    printf("JxlSignatureCheck OK, result = %d\n", (int)sig);
++
++    // Create encoder
++    JxlEncoder* enc = JxlEncoderCreate(NULL);
++    if (!enc) {
++        printf("Failed to create JxlEncoder\n");
++        return 1;
++    }
++
++    // Create decoder
++    JxlDecoder* dec = JxlDecoderCreate(NULL);
++    if (!dec) {
++        printf("Failed to create JxlDecoder\n");
++        JxlEncoderDestroy(enc);
++        return 1;
++    }
++
++    printf("Encoder + Decoder created successfully\n");
++
++    // Thread runner test
++    void* runner = JxlThreadParallelRunnerCreate(NULL, 2);
++    if (!runner) {
++        printf("Failed to create thread runner\n");
++        JxlEncoderDestroy(enc);
++        JxlDecoderDestroy(dec);
++        return 1;
++    }
++
++    if (JxlEncoderSetParallelRunner(enc,
++            JxlThreadParallelRunner,
++            runner) != JXL_ENC_SUCCESS) {
++        printf("JxlEncoderSetParallelRunner failed\n");
++    } else {
++        printf("JxlEncoderSetParallelRunner OK\n");
++    }
++
++    if (JxlDecoderSetParallelRunner(dec,
++            JxlThreadParallelRunner,
++            runner) != JXL_DEC_SUCCESS) {
++        printf("JxlDecoderSetParallelRunner failed\n");
++    } else {
++        printf("JxlDecoderSetParallelRunner OK\n");
++    }
++
++    // Basic encoder info test
++    JxlBasicInfo info;
++    JxlEncoderInitBasicInfo(&info);
++    info.xsize = 64;
++    info.ysize = 64;
++    info.bits_per_sample = 8;
++    info.num_color_channels = 3;
++    info.num_extra_channels = 0;
++    info.alpha_bits = 0;
++
++    if (JxlEncoderSetBasicInfo(enc, &info) != JXL_ENC_SUCCESS) {
++        printf("JxlEncoderSetBasicInfo failed\n");
++    } else {
++        printf("JxlEncoderSetBasicInfo OK\n");
++    }
++
++    // Color encoding test
++    JxlColorEncoding color;
++    JxlColorEncodingSetToSRGB(&color, 0);
++
++    if (JxlEncoderSetColorEncoding(enc, &color) != JXL_ENC_SUCCESS) {
++        printf("JxlEncoderSetColorEncoding failed\n");
++    } else {
++        printf("JxlEncoderSetColorEncoding OK\n");
++    }
++
++    // Cleanup
++    JxlThreadParallelRunnerDestroy(runner);
++    JxlEncoderDestroy(enc);
++    JxlDecoderDestroy(dec);
++
++    printf("All selected libjxl symbols worked.\n");
++    return 0;
++}
+\ No newline at end of file
+diff --git a/src/jxl.mk b/src/jxl.mk
+new file mode 100644
+index 00000000..21b6246a
+--- /dev/null
++++ b/src/jxl.mk
+@@ -0,0 +1,64 @@
++# This file is part of MXE. See LICENSE.md for licensing information.
++# Initial package scaffold generated with the "gsrc" tool:
++# https://github.com/hkunz/git-fetcher
++
++PKG             := jxl
++$(PKG)_WEBSITE  := https://jpeg.org/jpegxl/
++$(PKG)_DESCR    := JPEG XL image format reference implementation
++$(PKG)_VERSION  := 0.11.2
++$(PKG)_IGNORE   :=
++$(PKG)_CHECKSUM := ab38928f7f6248e2a98cc184956021acb927b16a0dee71b4d260dc040a4320ea
++$(PKG)_GH_CONF  := libjxl/libjxl/tags,v
++$(PKG)_DEPS     := cc brotli sjpeg giflib libjpeg-turbo libpng pkgconf pthreads highway lcms openexr zlib
++
++define $(PKG)_BUILD
++
++	# configure package with cmake
++	cd "$(BUILD_DIR)" && "$(TARGET)-cmake" "$(SOURCE_DIR)" \
++		-DCMAKE_INSTALL_PREFIX="$(PREFIX)/$(TARGET)" \
++		-DCMAKE_PREFIX_PATH="$(PREFIX)/$(TARGET)" \
++		-DBUILD_SHARED_LIBS=$(CMAKE_SHARED_BOOL) \
++		-DBUILD_TESTING=OFF \
++		-DJPEGXL_BUNDLE_LIBPNG=NO \
++		-DJPEGXL_ENABLE_AVX512=false \
++		-DJPEGXL_ENABLE_AVX512_SPR=false \
++		-DJPEGXL_ENABLE_AVX512_ZEN4=false \
++		-DJPEGXL_ENABLE_BENCHMARK=false \
++		-DJPEGXL_ENABLE_BOXES=false \
++		-DJPEGXL_ENABLE_COVERAGE=false \
++		-DJPEGXL_ENABLE_DEVTOOLS=false \
++		-DJPEGXL_ENABLE_DOXYGEN=false \
++		-DJPEGXL_ENABLE_EXAMPLES=false \
++		-DJPEGXL_ENABLE_JNI=false \
++		-DJPEGXL_ENABLE_JPEGLI=NO \
++		-DJPEGXL_ENABLE_JPEGLI_LIBJPEG=false \
++		-DJPEGXL_ENABLE_MANPAGES=false \
++		-DJPEGXL_ENABLE_OPENEXR=false \
++		-DJPEGXL_ENABLE_PLUGINS=false \
++		-DJPEGXL_ENABLE_SIZELESS_VECTORS=false \
++		-DJPEGXL_ENABLE_SJPEG=false \
++		-DJPEGXL_ENABLE_SKCMS=NO \
++		-DJPEGXL_ENABLE_TOOLS=true \
++		-DJPEGXL_ENABLE_TRANSCODE_JPEG=false \
++		-DJPEGXL_ENABLE_VIEWERS=false \
++		-DJPEGXL_ENABLE_WASM_THREADS=false \
++		-DJPEGXL_FORCE_NEON=false \
++		-DJPEGXL_FORCE_SYSTEM_BROTLI=true \
++		-DJPEGXL_FORCE_SYSTEM_GTEST=false \
++		-DJPEGXL_FORCE_SYSTEM_HWY=true \
++		-DJPEGXL_FORCE_SYSTEM_LCMS2=true \
++		-DJPEGXL_INSTALL_JPEGLI_LIBJPEG=false \
++		-DJPEGXL_STATIC=true \
++		-DJPEGXL_TEST_TOOLS=false \
++		-DJPEGXL_WARNINGS_AS_ERRORS=false \
++		-DCMAKE_BUILD_TYPE=Release
++
++	# build package and install
++	$(MAKE) -C "$(BUILD_DIR)" -j $(JOBS)
++	$(MAKE) -C "$(BUILD_DIR)" -j 1 install
++
++	# compile a test program to verify the library is usable
++	"$(TARGET)-g++" -Wall -Wextra "$(TEST_FILE)" \
++		-o "$(PREFIX)/$(TARGET)/bin/test-$(PKG).exe" \
++		`"$(TARGET)-pkg-config" "lib$(PKG)" --cflags --libs`
++endef
+diff --git a/src/kvazaar.mk b/src/kvazaar.mk
+new file mode 100644
+index 00000000..55b283da
+--- /dev/null
++++ b/src/kvazaar.mk
+@@ -0,0 +1,44 @@
++# This file is part of MXE. See LICENSE.md for licensing information.
++# Initial package scaffold generated with the "gsrc" tool:
++# https://github.com/hkunz/git-fetcher
++
++PKG             := kvazaar
++$(PKG)_WEBSITE  := https://ultravideo.fi/kvazaar.html
++$(PKG)_DESCR    := An open-source HEVC encoder
++$(PKG)_VERSION  := 2.3.2
++$(PKG)_IGNORE   :=
++$(PKG)_CHECKSUM := ddd0038696631ca5368d8e40efee36d2bbb805854b9b1dda8b12ea9b397ea951
++$(PKG)_GH_CONF  := ultravideo/kvazaar/tags,v
++$(PKG)_DEPS     := cc pthreads
++
++define $(PKG)_BUILD
++	# configure package with cmake
++	cd "$(BUILD_DIR)" && "$(TARGET)-cmake" "$(SOURCE_DIR)" \
++		-DCMAKE_INSTALL_PREFIX="$(PREFIX)/$(TARGET)" \
++		-DCMAKE_PREFIX_PATH="$(PREFIX)/$(TARGET)" \
++		-DBUILD_SHARED_LIBS=$(CMAKE_SHARED_BOOL) \
++		-DBUILD_KVAZAAR_BINARY=ON \
++		-DBUILD_SHARED_LIBS=ON \
++		-DBUILD_TESTS=ON \
++		-DUSE_CRYPTO=OFF \
++		-DCMAKE_BUILD_TYPE=Release
++
++	# build package and install
++	$(MAKE) -C "$(BUILD_DIR)" -j $(JOBS)
++	$(MAKE) -C "$(BUILD_DIR)" -j 1 install
++
++	# --- Testing kvazaar.exe ---
++	# kvazaar already compiles a test executable at:
++	#   usr\$(TARGET)\bin\kvazaar.exe
++	#
++	# To quickly test it, create a small YUV video file:
++	#   ffmpeg -f lavfi -i testsrc=size=640x360:rate=30 -pix_fmt yuv420p -t 5 -f rawvideo sample.yuv
++	#
++	# Then encode the "sample.yuv" output with kvazaar:
++	#   .\kvazaar.exe -i sample.yuv --input-res 640x360 -o output.265
++	#
++	# Note:
++	# - Adjust the input resolution (--input-res) to match your YUV file.
++	# - You can convert the raw .265 output to MP4 to watch it:
++	#     ffmpeg -i output.265 -c copy output.mp4
++endef
+diff --git a/src/libraw.mk b/src/libraw.mk
+index 218eb94b..9dca4b16 100644
+--- a/src/libraw.mk
++++ b/src/libraw.mk
+@@ -6,7 +6,7 @@ $(PKG)_DESCR    := A library for reading RAW files obtained from digital photo c
+ $(PKG)_VERSION  := 0.21.1
+ $(PKG)_CHECKSUM := b63d7ffa43463f74afcc02f9083048c231349b41cc9255dec0840cf8a67b52e0
+ $(PKG)_GH_CONF  := LibRaw/LibRaw/tags
+-$(PKG)_DEPS     := cc jasper jpeg lcms
++$(PKG)_DEPS     := cc jasper jpeg lcms zlib
+ 
+ define $(PKG)_BUILD
+     cd '$(SOURCE_DIR)' && autoreconf -fi
+@@ -19,14 +19,8 @@ define $(PKG)_BUILD
+         CXXFLAGS='-std=gnu++11 $(if $(BUILD_SHARED),-DLIBRAW_BUILDLIB,-DLIBRAW_NODLL)' \
+         LDFLAGS='-lws2_32'
+     $(MAKE) -C '$(BUILD_DIR)' -j '$(JOBS)' install
+-    # add missing entries to pkg-config files
+-    (echo ''; \
+-     echo 'Libs.private: -lws2_32 -ljasper'; \
+-     echo 'Cflags.private: -DLIBRAW_NODLL';) \
+-     | tee -a '$(PREFIX)/$(TARGET)/lib/pkgconfig/$(PKG).pc' \
+-              '$(PREFIX)/$(TARGET)/lib/pkgconfig/$(PKG)_r.pc'
+ 
+     '$(TARGET)-g++' -Wall -Wextra -std=c++11 \
+         '$(TEST_FILE)' -o '$(PREFIX)/$(TARGET)/bin/test-$(PKG).exe' \
+-        `'$(TARGET)-pkg-config' libraw --cflags --libs`
++        `'$(TARGET)-pkg-config' libraw --cflags --libs` -lws2_32
+ endef
+diff --git a/src/minizip-1-fixes.patch b/src/minizip-1-fixes.patch
+deleted file mode 100644
+index 71185f35..00000000
+--- a/src/minizip-1-fixes.patch
++++ /dev/null
+@@ -1,45 +0,0 @@
+-This file is part of MXE. See LICENSE.md for licensing information.
+-
+-Contains ad hoc patches for cross building.
+-
+-From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+-From: brodieG <brodieG@users.noreply.github.com>
+-Date: Tue, 21 Jun 2022 01:17:43 +0000
+-Subject: [PATCH 1/2] add lbz2 to pkgconfig
+-
+-mabrand: moved to Libs.private and added bcrypt too
+-
+-diff --git a/minizip.pc.cmakein b/minizip.pc.cmakein
+-index 1111111..2222222 100644
+---- a/minizip.pc.cmakein
+-+++ b/minizip.pc.cmakein
+-@@ -8,7 +8,7 @@ Name: @MINIZIP_TARGET@
+- Description: Zip manipulation library
+- Version: @VERSION@
+- 
+--Requires.private: @PC_PRIVATE_DEPS@
+-+Requires.private: @PC_PRIVATE_DEPS@ openssl
+- Libs: -L${libdir} -L${sharedlibdir} -l@MINIZIP_TARGET@
+--Libs.private:@PC_PRIVATE_LIBS@
+-+Libs.private:@PC_PRIVATE_LIBS@ -lbcrypt -lbz2
+- Cflags: -I${includedir}
+-
+-From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+-From: Mark Brand <mabrand@mabrand.nl>
+-Date: Tue, 8 Apr 2025 13:38:14 +0200
+-Subject: [PATCH 2/2] avoid "unused parameter" error
+-
+-
+-diff --git a/minizip.c b/minizip.c
+-index 1111111..2222222 100644
+---- a/minizip.c
+-+++ b/minizip.c
+-@@ -303,7 +303,7 @@ int32_t minizip_add(const char *path, const char *password, minizip_opt *options
+- 
+- /***************************************************************************/
+- 
+--int32_t minizip_extract_entry_cb(void *handle, void *userdata, mz_zip_file *file_info, const char *path) {
+-+int32_t minizip_extract_entry_cb(void */* handle */, void *userdata, mz_zip_file *file_info, const char *path) {
+-     minizip_opt *options = (minizip_opt *)userdata;
+-     char *utf8_string = NULL;
+- 
+diff --git a/src/minizip-ng-1-fixes.patch b/src/minizip-ng-1-fixes.patch
+new file mode 100644
+index 00000000..90efc34d
+--- /dev/null
++++ b/src/minizip-ng-1-fixes.patch
+@@ -0,0 +1,20 @@
++This file is part of MXE. See LICENSE.md for licensing information.
++
++Contains ad hoc patches for cross building.
++
++Subject: add missing -lbz2 -lz -llzma -lzstd to pkgconfig
++
++diff --git a/minizip.pc.cmakein b/minizip.pc.cmakein
++index 1111111..2222222 100644
++--- a/minizip.pc.cmakein
+++++ b/minizip.pc.cmakein
++@@ -8,7 +8,7 @@ Name: @MINIZIP_TARGET@
++ Description: Zip manipulation library
++ Version: @VERSION@
++
++-Requires.private: @PC_PRIVATE_DEPS@
+++Requires.private: @PC_PRIVATE_DEPS@ openssl
++ Libs: -L${libdir} -L${sharedlibdir} -l@MINIZIP_TARGET@
++-Libs.private:@PC_PRIVATE_LIBS@
+++Libs.private:@PC_PRIVATE_LIBS@ -lbcrypt -lbz2 -lz -llzma -lzstd
++ Cflags: -I${includedir}
+diff --git a/src/minizip-ng-test.cpp b/src/minizip-ng-test.cpp
+new file mode 100644
+index 00000000..c76921a3
+--- /dev/null
++++ b/src/minizip-ng-test.cpp
+@@ -0,0 +1,194 @@
++/*
++    This file is part of MXE. See LICENSE.md for licensing information.
++
++    Initial test file scaffold generated using the "gsrc" tool:
++    https://github.com/hkunz/git-fetcher
++
++    Compilation (pkg-config):
++
++    ./usr/bin/x86_64-w64-mingw32.static-g++ \
++        src/minizip-ng-test.cpp \
++        $(./usr/bin/x86_64-w64-mingw32.static-pkg-config --cflags --libs minizip) \
++        -o usr/x86_64-w64-mingw32.static/bin/test-minizip-ng.exe
++
++    Compilation (manual):
++
++    ./usr/bin/x86_64-w64-mingw32.static-g++ \
++        src/minizip-ng-test.cpp \
++        -I usr/x86_64-w64-mingw32.static/include \
++        -L usr/x86_64-w64-mingw32.static/lib \
++        -lminizip \
++        -lz \
++        -lbz2 \
++        -llzma \
++        -lzstd \
++        -lbcrypt \
++        -o usr/x86_64-w64-mingw32.static/bin/test-minizip-ng.exe
++
++    This test verifies:
++    - ZIP archive creation (write support)
++    - ZLIB compression backend (-lz)
++    - Optional encrypted ZIP entries (crypto backend, e.g. BCrypt/OpenSSL)
++    - ZIP archive reading (unzip functionality)
++    - File listing and metadata access
++    - End-to-end data integrity (write → compress → read → decompress)
++
++*/
++
++#include <cstdio>
++#include <cstring>
++#include <vector>
++
++#include <minizip/zip.h>
++#include <minizip/unzip.h>
++
++static void write_file(zipFile zf,
++                       const char* name,
++                       const char* content,
++                       const char* password = nullptr)
++{
++    zip_fileinfo zi;
++    memset(&zi, 0, sizeof(zi));
++
++    int err = zipOpenNewFileInZip3_64(
++        zf,
++        name,
++        &zi,
++        nullptr, 0,
++        nullptr, 0,
++        nullptr,
++        Z_DEFLATED,
++        Z_DEFAULT_COMPRESSION,
++        0,
++        -MAX_WBITS,
++        DEF_MEM_LEVEL,
++        Z_DEFAULT_STRATEGY,
++        password,
++        0,
++        0
++    );
++
++    if (err != ZIP_OK) {
++        printf("FAIL: write %s\n", name);
++        return;
++    }
++
++    zipWriteInFileInZip(zf, content, (unsigned int)strlen(content));
++    zipCloseFileInZip(zf);
++
++    printf("OK: wrote %s\n", name);
++}
++
++static void read_zip(const char* zipname)
++{
++    unzFile uf = unzOpen(zipname);
++    if (!uf) {
++        printf("FAIL: unzip open\n");
++        return;
++    }
++
++    if (unzGoToFirstFile(uf) != UNZ_OK) {
++        printf("FAIL: go first file\n");
++        unzClose(uf);
++        return;
++    }
++
++    do {
++        char fname[256];
++        unz_file_info info;
++        memset(&info, 0, sizeof(info));
++
++        if (unzGetCurrentFileInfo(
++                uf,
++                &info,
++                fname,
++                sizeof(fname),
++                nullptr, 0,
++                nullptr, 0) != UNZ_OK)
++        {
++            printf("FAIL: get file info\n");
++            break;
++        }
++
++        printf("READ FILE: %s\n", fname);
++
++        int err;
++
++        // IMPORTANT: handle encrypted file properly
++        if (strcmp(fname, "encrypted.txt") == 0)
++        {
++            err = unzOpenCurrentFilePassword(uf, "password123");
++        }
++        else
++        {
++            err = unzOpenCurrentFile(uf);
++        }
++
++        if (err != UNZ_OK) {
++            printf("FAIL: open file %s\n", fname);
++            break;
++        }
++
++        std::vector<char> buf(info.uncompressed_size + 1);
++        int r = unzReadCurrentFile(uf, buf.data(), (unsigned int)buf.size());
++
++        if (r < 0) {
++            printf("FAIL: read file\n");
++            unzCloseCurrentFile(uf);
++            break;
++        }
++
++        buf[r] = '\0';
++
++        printf("CONTENT: %s\n", buf.data());
++
++        unzCloseCurrentFile(uf);
++
++    } while (unzGoToNextFile(uf) == UNZ_OK);
++
++    unzClose(uf);
++}
++
++int main()
++{
++    printf("=== MXE minizip-ng FULL VALIDATION TEST ===\n");
++
++    const char* zipname = "test.zip";
++
++    zipFile zf = zipOpen(zipname, 0);
++    if (!zf) {
++        printf("FAIL: zipOpen\n");
++        return 1;
++    }
++
++    // -------------------------
++    // Normal file (zlib)
++    // -------------------------
++    write_file(
++        zf,
++        "zlib.txt",
++        "hello from zlib compression"
++    );
++
++    // -------------------------
++    // Encrypted file (bcrypt path if enabled)
++    // -------------------------
++    write_file(
++        zf,
++        "encrypted.txt",
++        "secret data inside zip",
++        "password123"
++    );
++
++    zipClose(zf, nullptr);
++
++    printf("\n=== ZIP CREATED ===\n\n");
++
++    // -------------------------
++    // READ BACK
++    // -------------------------
++    read_zip(zipname);
++
++    printf("\n=== TEST COMPLETE ===\n");
++    return 0;
++}
+diff --git a/src/minizip-ng.mk b/src/minizip-ng.mk
+new file mode 100644
+index 00000000..3b771036
+--- /dev/null
++++ b/src/minizip-ng.mk
+@@ -0,0 +1,59 @@
++# This file is part of MXE. See LICENSE.md for licensing information.
++# Initial package scaffold generated with the "gsrc" tool:
++# https://github.com/hkunz/git-fetcher
++
++include src/common/pkgconfig-generator.mk
++
++PKG             := minizip-ng
++$(PKG)_WEBSITE  := https://www.winimage.com/zLibDll/minizip.html
++$(PKG)_DESCR    := Modern fork of minizip providing ZIP archive handling with support for multiple compression backends zlib, bzip2, lzma, zstd
++$(PKG)_VERSION  := 4.1.0
++$(PKG)_IGNORE   :=
++$(PKG)_CHECKSUM := 85417229bb0cd56403e811c316150eea1a3643346d9cec7512ddb7ea291b06f2
++$(PKG)_GH_CONF  := zlib-ng/minizip-ng/tags
++$(PKG)_DEPS     := cc bzip2 libiconv lzma openssl pkgconf zlib zstd xz
++
++define $(PKG)_BUILD
++
++	# configure package with cmake
++	cd "$(BUILD_DIR)" && "$(TARGET)-cmake" "$(SOURCE_DIR)" \
++		-DCMAKE_INSTALL_PREFIX="$(PREFIX)/$(TARGET)" \
++		-DCMAKE_PREFIX_PATH="$(PREFIX)/$(TARGET)" \
++		-DBUILD_SHARED_LIBS=$(CMAKE_SHARED_BOOL) \
++		-DMZ_BUILD_FUZZ_TESTS=OFF \
++		-DMZ_BUILD_TESTS=OFF \
++		-DMZ_BUILD_UNIT_TESTS=OFF \
++		-DMZ_BZIP2=ON \
++		-DMZ_CODE_COVERAGE=OFF \
++		-DMZ_COMPAT=ON \
++		-DMZ_COMPRESS_ONLY=OFF \
++		-DMZ_DECOMPRESS_ONLY=OFF \
++		-DMZ_FETCH_LIBS=OFF \
++		-DMZ_FILE32_API=OFF \
++		-DMZ_FORCE_FETCH_LIBS=OFF \
++		-DMZ_ICONV=ON \
++		-DMZ_LIBBSD=ON \
++		-DMZ_LZMA=ON \
++		-DMZ_OPENSSL=ON \
++		-DMZ_PKCRYPT=ON \
++		-DMZ_WZAES=ON \
++		-DMZ_ZLIB=ON \
++		-DMZ_ZSTD=ON \
++		-DCMAKE_BUILD_TYPE=Release
++
++	# build package and install
++	$(MAKE) -C "$(BUILD_DIR)" -j $(JOBS)
++	$(MAKE) -C "$(BUILD_DIR)" -j 1 install
++
++	# compile upstream CLI (reference tool)
++	'$(TARGET)-gcc' \
++		-W -Wall -Werror -Wno-format \
++		-DHAVE_STDINT_H -DHAVE_INTTYPES_H \
++		'$(SOURCE_DIR)/minizip.c' -o '$(PREFIX)/$(TARGET)/bin/test-$(PKG)-cli.exe' \
++		`'$(TARGET)-pkg-config' minizip --libs-only-l`
++
++	# compile real-world test (API + pkg-config validation)
++	"$(TARGET)-g++" -Wall -Wextra "$(TEST_FILE)" \
++		-o "$(PREFIX)/$(TARGET)/bin/test-$(PKG)-api.exe" \
++		`"$(TARGET)-pkg-config" minizip --cflags --libs`
++endef
+diff --git a/src/minizip.mk b/src/minizip.mk
+deleted file mode 100644
+index 58d13267..00000000
+--- a/src/minizip.mk
++++ /dev/null
+@@ -1,26 +0,0 @@
+-# This file is part of MXE. See LICENSE.md for licensing information.
+-
+-PKG             := minizip
+-$(PKG)_WEBSITE  := https://www.winimage.com/zLibDll/minizip.html
+-$(PKG)_IGNORE   :=
+-$(PKG)_VERSION  := 4.0.9
+-$(PKG)_CHECKSUM := 353a9e1c1170c069417c9633cc94ced74f826319d6d0b46d442c2cd7b00161c1
+-$(PKG)_GH_CONF  := zlib-ng/minizip-ng/releases
+-$(PKG)_DEPS     := cc bzip2 lzma openssl zlib zstd
+-
+-define $(PKG)_BUILD
+-    # build and install the library
+-    cd '$(BUILD_DIR)' && $(TARGET)-cmake '$(SOURCE_DIR)' \
+-        -DBUILD_TEST=OFF \
+-        -DUSE_ZLIB=ON
+-
+-    $(MAKE) -C '$(BUILD_DIR)' -j '$(JOBS)'
+-    $(MAKE) -C '$(BUILD_DIR)' -j 1 install
+-
+-    # compile test
+-    '$(TARGET)-gcc' \
+-        -W -Wall -Werror -Wno-format \
+-        -DHAVE_STDINT_H -DHAVE_INTTYPES_H \
+-        '$(SOURCE_DIR)/minizip.c' -o '$(PREFIX)/$(TARGET)/bin/test-$(PKG).exe' \
+-        `'$(TARGET)-pkg-config' $(PKG) --libs-only-l`
+-endef
+diff --git a/src/nlohmann_json-test.cpp b/src/nlohmann_json-test.cpp
+new file mode 100644
+index 00000000..bf17235e
+--- /dev/null
++++ b/src/nlohmann_json-test.cpp
+@@ -0,0 +1,40 @@
++/*
++    Minimal test program for nlohmann_json, verifying basic functionality
++    and compatibility with MXE static builds on Windows.
++
++    To compile with MXE (example):
++
++    ./usr/bin/x86_64-w64-mingw32.static-g++ \
++        src/nlohmann_json-test.cpp \
++        -I usr/x86_64-w64-mingw32.static/include \
++        -L usr/x86_64-w64-mingw32.static/lib \
++        -o usr/x86_64-w64-mingw32.static/bin/test-nlohmann_json.exe
++*/
++
++#include <cstdio>
++#include <cstdint>
++#include <nlohmann/json.hpp>
++
++int main() {
++    // Create a simple JSON object
++    nlohmann::json j;
++    j["name"] = "MXE Test";
++    j["version"] = 1.0;
++    j["success"] = true;
++
++    // Serialize to string
++    std::string s = j.dump();
++
++    // Print JSON string
++    printf("JSON output: %s\n", s.c_str());
++
++    // Deserialize back
++    auto j2 = nlohmann::json::parse(s);
++    if (j2["success"].get<bool>()) {
++        printf("JSON parsing succeeded!\n");
++    } else {
++        printf("JSON parsing failed!\n");
++    }
++
++    return 0;
++}
+diff --git a/src/nlohmann_json.mk b/src/nlohmann_json.mk
+new file mode 100644
+index 00000000..4e1ca66f
+--- /dev/null
++++ b/src/nlohmann_json.mk
+@@ -0,0 +1,32 @@
++# This file is part of MXE. See LICENSE.md for licensing information.
++# Initial package scaffold generated with the "gsrc" tool:
++# https://github.com/hkunz/git-fetcher
++
++PKG             := nlohmann_json
++$(PKG)_WEBSITE  := https://json.nlohmann.me
++$(PKG)_DESCR    := JSON for Modern C++
++$(PKG)_VERSION  := 3.12.0
++$(PKG)_IGNORE   :=
++$(PKG)_CHECKSUM := 4b92eb0c06d10683f7447ce9406cb97cd4b453be18d7279320f7b2f025c10187
++$(PKG)_GH_CONF  := nlohmann/json/tags,v
++$(PKG)_DEPS     := cc
++
++define $(PKG)_BUILD
++	# configure package with cmake
++	cd "$(BUILD_DIR)" && "$(TARGET)-cmake" "$(SOURCE_DIR)" \
++		-DCMAKE_INSTALL_PREFIX="$(PREFIX)/$(TARGET)" \
++		-DCMAKE_PREFIX_PATH="$(PREFIX)/$(TARGET)" \
++		-DBUILD_SHARED_LIBS=$(CMAKE_SHARED_BOOL) \
++		-DBUILD_TESTING=ON \
++		-DJSON_CI=OFF \
++		-DCMAKE_BUILD_TYPE=Release
++
++	# build package and install
++	$(MAKE) -C "$(BUILD_DIR)" -j $(JOBS)
++	$(MAKE) -C "$(BUILD_DIR)" -j 1 install
++
++	# compile a test program to verify the library is usable
++	"$(TARGET)-g++" -Wall -Wextra "$(TEST_FILE)" \
++		-o "$(PREFIX)/$(TARGET)/bin/test-$(PKG).exe" \
++		`"$(TARGET)-pkg-config" "$(PKG)" --cflags --libs`
++endef
+diff --git a/src/opencolorio-1-fix-linking-zstd.patch b/src/opencolorio-1-fix-linking-zstd.patch
+new file mode 100644
+index 00000000..c48ab32b
+--- /dev/null
++++ b/src/opencolorio-1-fix-linking-zstd.patch
+@@ -0,0 +1,71 @@
++diff --git a/share/cmake/macros/InstallZSTD.cmake b/share/cmake/macros/InstallZSTD.cmake
++new file mode 100644
++index 00000000..e61d2876
++--- /dev/null
+++++ b/share/cmake/macros/InstallZSTD.cmake
++@@ -0,0 +1,5 @@
+++find_package(zstd CONFIG REQUIRED)
+++
+++set(ZSTD_FOUND TRUE)  # Mark as found so OCIO stops complaining
+++set(ZSTD_LIBRARIES zstd::libzstd) # Optional but safe (matches OCIO expectations)
+++
++diff --git a/share/cmake/modules/FindExtPackages.cmake b/share/cmake/modules/FindExtPackages.cmake
++index 9bf17cf8..0060d87d 100644
++--- a/share/cmake/modules/FindExtPackages.cmake
+++++ b/share/cmake/modules/FindExtPackages.cmake
++@@ -108,6 +108,10 @@ ocio_handle_dependency(  ZLIB REQUIRED ALLOW_INSTALL
++
++ ###############################################################################
++
+++ocio_handle_dependency( BZip2 REQUIRED ALLOW_INSTALL )
+++ocio_handle_dependency( LibLZMA REQUIRED ALLOW_INSTALL )
+++ocio_handle_dependency( ZSTD REQUIRED ALLOW_INSTALL )
+++
++ # minizip-ng
++ # https://github.com/zlib-ng/minizip-ng
++ ocio_handle_dependency(  minizip-ng REQUIRED ALLOW_INSTALL
++diff --git a/share/cmake/modules/Findminizip-ng.cmake b/share/cmake/modules/Findminizip-ng.cmake
++index bf194c07..cdf53e06 100644
++--- a/share/cmake/modules/Findminizip-ng.cmake
+++++ b/share/cmake/modules/Findminizip-ng.cmake
++@@ -55,7 +55,7 @@ if(NOT OCIO_INSTALL_EXT_PACKAGES STREQUAL ALL)
++         # Depending on the options used when minizip-ng was built, it could have multiple libraries
++         # listed in INTERFACE_LINK_LIBRARIES. OCIO only needs ZLIB.
++         # Only add custom zlib target ZLIB::ZLIB to INTERFACE_LINK_LIBRARIES.
++-        set_target_properties(MINIZIP::minizip-ng PROPERTIES INTERFACE_LINK_LIBRARIES "ZLIB::ZLIB")
+++        set_target_properties(MINIZIP::minizip-ng PROPERTIES INTERFACE_LINK_LIBRARIES "zstd::libzstd")
++
++         if (NOT minizip-ng_LIBRARY)
++             # Lib names to search for
++@@ -202,7 +202,15 @@ if(_minizip-ng_TARGET_CREATE)
++
++     mark_as_advanced(minizip-ng_INCLUDE_DIR minizip-ng_LIBRARY minizip-ng_VERSION)
++
++-    target_link_libraries(MINIZIP::minizip-ng INTERFACE ZLIB::ZLIB)
+++    target_link_libraries(MINIZIP::minizip-ng INTERFACE
+++        ZLIB::ZLIB
+++        BZip2::BZip2
+++        LibLZMA::LibLZMA
+++        zstd::libzstd
+++    )
+++    if(WIN32)
+++        target_link_libraries(MINIZIP::minizip-ng INTERFACE bcrypt)
+++    endif()
++ endif()
++
++ ###############################################################################
++diff --git a/src/OpenColorIO/transforms/FileTransform.cpp b/src/OpenColorIO/transforms/FileTransform.cpp
++old mode 100755
++new mode 100644
++index 33da5f30..75bd9431
++--- a/src/OpenColorIO/transforms/FileTransform.cpp
+++++ b/src/OpenColorIO/transforms/FileTransform.cpp
++@@ -218,7 +218,7 @@ std::unique_ptr<std::istream> getLutData(
++
++     // Default behavior. Return file stream.
++     return std::unique_ptr<std::istream>(new std::ifstream(
++-        Platform::filenameToUTF(filepath), mode));
+++        Platform::filenameToUTF(filepath).c_str(), mode));
++ }
++
++ bool CollectContextVariables(const Config &,
+diff --git a/src/opencolorio-test.cpp b/src/opencolorio-test.cpp
+new file mode 100644
+index 00000000..f08b54f3
+--- /dev/null
++++ b/src/opencolorio-test.cpp
+@@ -0,0 +1,66 @@
++/*
++    This file is part of MXE. See LICENSE.md for licensing information.
++
++    Initial test file scaffold generated using the "gsrc" tool:
++    https://github.com/hkunz/git-fetcher
++
++    Compilation (pkg-config):
++
++    ./usr/bin/x86_64-w64-mingw32.static-g++ \
++        src/opencolorio-test.cpp \
++        $(./usr/bin/x86_64-w64-mingw32.static-pkg-config --cflags --libs OpenColorIO) \
++        -o usr/x86_64-w64-mingw32.static/bin/test-opencolorio.exe
++
++    Compilation (manual):
++
++    ./usr/bin/x86_64-w64-mingw32.static-g++ \
++        src/opencolorio-test.cpp \
++        -DOpenColorIO_SKIP_IMPORTS \
++        -I usr/x86_64-w64-mingw32.static/include \
++        -L usr/x86_64-w64-mingw32.static/lib \
++        -lOpenColorIO \
++        -lImath-3_2 \
++        -lyaml-cpp \
++        -lexpat \
++        -lminizip \
++        -lz \
++        -lbz2 \
++        -llzma \
++        -lzstd \
++        -lpystring \
++        -lbcrypt \
++        -lgdi32 \
++        -o usr/x86_64-w64-mingw32.static/bin/test-opencolorio.exe
++*/
++
++#include <OpenColorIO/OpenColorIO.h>
++#include <iostream>
++
++namespace OCIO = OCIO_NAMESPACE;
++
++int main()
++{
++    try
++    {
++        // Get current config (should always exist)
++        OCIO::ConstConfigRcPtr config = OCIO::GetCurrentConfig();
++
++        std::cout << "OpenColorIO version: "
++                  << OCIO::GetVersion() << std::endl;
++
++        std::cout << "Default display: "
++                  << config->getDefaultDisplay() << std::endl;
++
++        std::cout << "Default view: "
++                  << config->getDefaultView(config->getDefaultDisplay())
++                  << std::endl;
++
++        std::cout << "OCIO test succeeded." << std::endl;
++        return 0;
++    }
++    catch (const std::exception & e)
++    {
++        std::cerr << "OCIO error: " << e.what() << std::endl;
++        return 1;
++    }
++}
+diff --git a/src/opencolorio.mk b/src/opencolorio.mk
+new file mode 100644
+index 00000000..4194fd96
+--- /dev/null
++++ b/src/opencolorio.mk
+@@ -0,0 +1,73 @@
++# This file is part of MXE. See LICENSE.md for licensing information.
++# Initial package scaffold generated with the "gsrc" tool:
++# https://github.com/hkunz/git-fetcher
++
++include src/common/pkgconfig-generator.mk
++
++PKG             := opencolorio
++$(PKG)_WEBSITE  := https://opencolorio.org
++$(PKG)_DESCR    := A color management framework for visual effects and animation.
++$(PKG)_VERSION  := 2.5.1
++$(PKG)_IGNORE   :=
++$(PKG)_CHECKSUM := 08cb6213ea4edee550ab050509d38204004bee6742c658166b1cf825d0a9381b
++$(PKG)_GH_CONF  := AcademySoftwareFoundation/OpenColorIO/tags,v
++$(PKG)_DEPS     := cc imath minizip-ng pkgconf expat yaml-cpp bzip2 lzma zstd pystring zlib openexr
++
++define $(PKG)_BUILD
++
++	# configure package with cmake
++	cd "$(BUILD_DIR)" && "$(TARGET)-cmake" "$(SOURCE_DIR)" \
++		-DCMAKE_INSTALL_PREFIX="$(PREFIX)/$(TARGET)" \
++		-DCMAKE_PREFIX_PATH="$(PREFIX)/$(TARGET)" \
++		-DBUILD_SHARED_LIBS=$(CMAKE_SHARED_BOOL) \
++		-DBUILD_TESTING=ON \
++		-DOCIO_BUILD_APPS=ON \
++		-DOCIO_BUILD_DOCS=OFF \
++		-DOCIO_BUILD_GPU_TESTS=ON \
++		-DOCIO_BUILD_JAVA=OFF \
++		-DOCIO_BUILD_NUKE=OFF \
++		-DOCIO_BUILD_OPENFX=OFF \
++		-DOCIO_BUILD_PYTHON=OFF \
++		-DOCIO_BUILD_TESTS=ON \
++		-DOCIO_ENABLE_SANITIZER=OFF \
++		-DOCIO_USE_AVX2=ON \
++		-DOCIO_USE_AVX512=ON \
++		-DOCIO_USE_AVX=ON \
++		-DOCIO_USE_F16C=ON \
++		-DOCIO_USE_HEADLESS=OFF \
++		-DOCIO_USE_OIIO_FOR_APPS=OFF \
++		-DOCIO_USE_SIMD=ON \
++		-DOCIO_USE_SOVERSION=ON \
++		-DOCIO_USE_SSE2=ON \
++		-DOCIO_USE_SSE3=ON \
++		-DOCIO_USE_SSE42=ON \
++		-DOCIO_USE_SSE4=ON \
++		-DOCIO_USE_SSSE3=ON \
++		-DOCIO_VERBOSE=OFF \
++		-DOCIO_WARNING_AS_ERROR=OFF \
++		-DCMAKE_BUILD_TYPE=Release
++
++	# build package and install
++	$(MAKE) -C "$(BUILD_DIR)" -j $(JOBS)
++	$(MAKE) -C "$(BUILD_DIR)" -j 1 install
++
++	# OCIO's original OpenColorIO.pc is incomplete, so overwriting .pc
++	rm $(PREFIX)/$(TARGET)/lib/pkgconfig/OpenColorIO.pc
++	$(call GENERATE_PC, \
++		$(PREFIX)/$(TARGET), \
++		OpenColorIO, \
++		$($(PKG)_DESCR), \
++		$($(PKG)_VERSION), \
++		expat yaml-cpp, \
++		Imath minizip zlib liblzma libzstd pystring, \
++		-lOpenColorIO, \
++		-lbz2 -lbcrypt -lgdi32, \
++		, \
++		-DOpenColorIO_SKIP_IMPORTS \
++	)
++
++	# compile a test program to verify the library is usable
++	"$(TARGET)-g++" -Wall -Wextra "$(TEST_FILE)" \
++		-o "$(PREFIX)/$(TARGET)/bin/test-$(PKG).exe" \
++		`"$(TARGET)-pkg-config" "OpenColorIO" --cflags --libs`
++endef
+diff --git a/src/openexr-1-fixes.patch b/src/openexr-1-fixes.patch
+deleted file mode 100644
+index a1a9ba29..00000000
+--- a/src/openexr-1-fixes.patch
++++ /dev/null
+@@ -1,69 +0,0 @@
+-This file is part of MXE. See LICENSE.md for licensing information.
+-
+-Contains ad hoc patches for cross building.
+-
+-From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+-From: Martin Lambers <marlam@marlam.de>
+-Date: Mon, 23 Feb 2026 11:48:38 +0100
+-Subject: [PATCH 1/2] fix aligned alloc
+-
+-
+-diff --git a/IlmImf/ImfSystemSpecific.h b/IlmImf/ImfSystemSpecific.h
+-index 1111111..2222222 100644
+---- a/IlmImf/ImfSystemSpecific.h
+-+++ b/IlmImf/ImfSystemSpecific.h
+-@@ -60,6 +60,20 @@ static bool GLOBAL_SYSTEM_LITTLE_ENDIAN =
+- #define EXR_FORCEINLINE inline
+- #define EXR_RESTRICT __restrict
+- 
+-+#ifdef __MINGW32__
+-+
+-+static void* EXRAllocAligned(size_t size, size_t alignment)
+-+{
+-+    return _aligned_malloc(size, alignment);
+-+}
+-+
+-+static void EXRFreeAligned(void* ptr)
+-+{
+-+    return _aligned_free(ptr);
+-+}
+-+
+-+#else
+-+
+- static void* EXRAllocAligned(size_t size, size_t alignment)
+- {
+-     void* ptr = 0;
+-@@ -67,12 +81,12 @@ static void* EXRAllocAligned(size_t size, size_t alignment)
+-     return ptr;
+- }
+- 
+--
+- static void EXRFreeAligned(void* ptr)
+- {
+-     free(ptr);
+- }
+- 
+-+#endif
+- #elif defined _MSC_VER
+- 
+- #define EXR_FORCEINLINE __forceinline
+-
+-From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+-From: Saikrishna Arcot <saiarcot895@gmail.com>
+-Date: Mon, 5 Oct 2015 21:16:35 -0400
+-Subject: [PATCH 2/2] Correct pointer conversion.
+-
+-
+-diff --git a/IlmImf/ImfOptimizedPixelReading.h b/IlmImf/ImfOptimizedPixelReading.h
+-index 1111111..2222222 100644
+---- a/IlmImf/ImfOptimizedPixelReading.h
+-+++ b/IlmImf/ImfOptimizedPixelReading.h
+-@@ -70,7 +70,7 @@ EXR_FORCEINLINE
+- bool
+- isPointerSSEAligned (const void* EXR_RESTRICT pPointer)
+- {
+--    unsigned long trailingBits = ((unsigned long)pPointer) & 15;
+-+    uintptr_t trailingBits = ((uintptr_t)pPointer) & 15;
+-     return trailingBits == 0;
+- }
+- 
+diff --git a/src/openexr-test.cpp b/src/openexr-test.cpp
+index 63bcedaf..339ec8ac 100644
+--- a/src/openexr-test.cpp
++++ b/src/openexr-test.cpp
+@@ -1,20 +1,83 @@
+ /*
+- * This file is part of MXE. See LICENSE.md for licensing information.
+- */
++    Minimal test program for OpenEXR library, verifying basic functionality
++    and compatibility with MXE static builds on Windows.
+ 
+-#include <ImfChannelList.h>
+-#include <ImfInputFile.h>
++    To compile with MXE (example):
+ 
+-using namespace Imf;
+-using namespace Imath;
++    ./usr/bin/x86_64-w64-mingw32.static-g++ \
++        src/openexr-test.cpp \
++        -I usr/x86_64-w64-mingw32.static/include/ \
++        -I usr/x86_64-w64-mingw32.static/include/OpenEXR \
++        -I usr/x86_64-w64-mingw32.static/include/Imath \
++        -L usr/x86_64-w64-mingw32.static/lib/ \
++        -lOpenEXR-3_4 \
++        -lOpenEXRUtil-3_4 \
++        -lOpenEXRCore-3_4 \
++        -lIex-3_4 \
++        -lIlmThread-3_4 \
++        -lImath-3_2 \
++        -lopenjph \
++        -ldeflate \
++        -lpthread \
++        -o usr/x86_64-w64-mingw32.static/bin/test-openexr.exe
++*/
+ 
+-int main(int argc, char *argv[])
+-{
+-    (void)argc;
+-    (void)argv;
++#include <OpenEXR/ImfRgbaFile.h>
++#include <OpenEXR/ImfRgba.h>
++#include <iostream>
++#include <vector>
+ 
+-    InputFile file("some-file.exr");
+-    Box2i dw = file.header().dataWindow();
++int main() {
++    std::cout << "OpenEXR test program\n";
++
++    // Create a 4x4 RGBA image in memory
++    const int width = 4;
++    const int height = 4;
++    std::vector<Imf::Rgba> pixels(width * height);
++
++    for (int y = 0; y < height; ++y)
++        for (int x = 0; x < width; ++x)
++            pixels[y * width + x] = Imf::Rgba(
++                float(x) / width,
++                float(y) / height,
++                0.5f,
++                1.0f
++            );
++
++    const char* filename = "test.exr";
++
++    // Write EXR
++    try {
++        Imf::RgbaOutputFile file(filename, width, height, Imf::WRITE_RGBA);
++        file.setFrameBuffer(pixels.data(), 1, width);
++        file.writePixels(height);
++        std::cout << "Wrote " << filename << "\n";
++    } catch (const std::exception& e) {
++        std::cerr << "Error writing EXR: " << e.what() << "\n";
++        return 1;
++    }
++
++    // Read EXR
++    try {
++        Imf::RgbaInputFile file(filename);
++        Imath::Box2i dw = file.dataWindow();
++        int w = dw.max.x - dw.min.x + 1;
++        int h = dw.max.y - dw.min.y + 1;
++
++        std::vector<Imf::Rgba> readPixels(w * h);
++        file.setFrameBuffer(readPixels.data(), 1, w);
++        file.readPixels(0, h-1);
++
++        std::cout << "Read " << filename << " successfully! First pixel RGBA: "
++                  << readPixels[0].r << " "
++                  << readPixels[0].g << " "
++                  << readPixels[0].b << " "
++                  << readPixels[0].a << "\n";
++
++    } catch (const std::exception& e) {
++        std::cerr << "Error reading EXR: " << e.what() << "\n";
++        return 1;
++    }
+ 
+     return 0;
+ }
+diff --git a/src/openexr.mk b/src/openexr.mk
+index fa7d70b3..8d5d4d5b 100644
+--- a/src/openexr.mk
++++ b/src/openexr.mk
+@@ -2,68 +2,25 @@
+ 
+ PKG             := openexr
+ $(PKG)_WEBSITE  := https://www.openexr.com/
+-$(PKG)_DESCR    := OpenEXR
++$(PKG)_DESCR    := OpenEXR - high dynamic range image library
+ $(PKG)_IGNORE   :=
+-$(PKG)_VERSION  := 2.2.0
+-$(PKG)_CHECKSUM := 36a012f6c43213f840ce29a8b182700f6cf6b214bea0d5735594136b44914231
+-$(PKG)_SUBDIR   := openexr-$($(PKG)_VERSION)
+-$(PKG)_FILE     := openexr-$($(PKG)_VERSION).tar.gz
+-$(PKG)_URL      := https://download.savannah.nongnu.org/releases/openexr/$($(PKG)_FILE)
+-$(PKG)_DEPS     := cc ilmbase pthreads zlib
+-
+-define $(PKG)_UPDATE
+-    $(WGET) -q -O- 'https://www.openexr.com/downloads.html' | \
+-    grep 'openexr-' | \
+-    $(SED) -n 's,.*openexr-\([0-9][^>]*\)\.tar.*,\1,p' | \
+-    head -1
+-endef
++$(PKG)_VERSION  := 3.4.6
++$(PKG)_CHECKSUM := f8cfe743a81c8cc1dd3cbaafa7fa76f75ad31456b0fc45a42b086d12530a4e35
++$(PKG)_GH_CONF  := AcademySoftwareFoundation/openexr/tags,v
++$(PKG)_DEPS     := cc imath pthreads zlib openjph libdeflate
+ 
+ define $(PKG)_BUILD
+-    # Update auto-stuff, except autoheader, because if fails...
+-    cd '$(1)' && AUTOHEADER=true autoreconf -fi
+-    # unpack and build a native version of ilmbase
+-    cd '$(1)' && $(call UNPACK_PKG_ARCHIVE,ilmbase)
+-    $(foreach PKG_PATCH,$(sort $(wildcard $(TOP_DIR)/src/ilmbase-*.patch)),
+-        (cd '$(1)/$(ilmbase_SUBDIR)' && $(PATCH) -p1 -u) < $(PKG_PATCH))
+-    echo 'echo $1' > '$(1)/$(ilmbase_SUBDIR)/config.sub'
+-    cd '$(1)/$(ilmbase_SUBDIR)' && $(SHELL) ./configure \
+-        --build="`config.guess`" \
+-        --disable-shared \
+-        --prefix='$(1)/ilmbase' \
+-        --enable-threading=no \
+-        --disable-posix-sem \
+-        CXXFLAGS="-g -O2 -std=gnu++0x" \
+-        CONFIG_SHELL=$(SHELL) \
+-        SHELL=$(SHELL)
+-    $(MAKE) -C '$(1)/$(ilmbase_SUBDIR)' -j '$(JOBS)' install \
+-        bin_PROGRAMS= sbin_PROGRAMS= noinst_PROGRAMS=
+-    cd '$(1)' && ./configure \
+-        $(MXE_CONFIGURE_OPTS) \
+-        --disable-threading \
+-        --disable-posix-sem \
+-        --disable-ilmbasetest \
+-        PKG_CONFIG='$(PREFIX)/bin/$(TARGET)-pkg-config' \
+-        CXXFLAGS="-g -O2 -std=gnu++0x"
+-    # build the code generator manually
+-    cd '$(1)/IlmImf' && $(BUILD_CXX) -O2 \
+-        -I'$(1)/ilmbase/include/OpenEXR' \
+-        -L'$(1)/ilmbase/lib' \
+-        b44ExpLogTable.cpp \
+-        -lHalf \
+-        -o b44ExpLogTable
+-    '$(1)/IlmImf/b44ExpLogTable' > '$(1)/IlmImf/b44ExpLogTable.h'
+-    cd '$(1)/IlmImf' && $(BUILD_CXX) -O2 \
+-        -I'$(1)/config' -I. \
+-        -I'$(1)/ilmbase/include/OpenEXR' \
+-        -L'$(1)/ilmbase/lib' \
+-        dwaLookups.cpp \
+-        -lHalf -lIlmThread -lIex -lpthread \
+-        -o dwaLookups
+-    '$(1)/IlmImf/dwaLookups' > '$(1)/IlmImf/dwaLookups.h'
+-    $(MAKE) -C '$(1)' -j '$(JOBS)' install bin_PROGRAMS= sbin_PROGRAMS= noinst_PROGRAMS=
++    mkdir -p '$(BUILD_DIR)'
++    cd '$(BUILD_DIR)' && '$(TARGET)-cmake' '$(SOURCE_DIR)' \
++        -DCMAKE_INSTALL_PREFIX='$(PREFIX)/$(TARGET)' \
++        -DBUILD_SHARED_LIBS=OFF \
++        -DILMBASE_ROOT_DIR='$(PREFIX)/$(TARGET)' \
++        -DCMAKE_BUILD_TYPE=Release
++
++    $(MAKE) -C '$(BUILD_DIR)' -j '$(JOBS)'
++    $(MAKE) -C '$(BUILD_DIR)' -j 1 install
+ 
+     '$(TARGET)-g++' \
+-        -Wall -Wextra -std=gnu++0x \
+-        '$(TEST_FILE)' -o '$(PREFIX)/$(TARGET)/bin/test-openexr.exe' \
+-        `'$(TARGET)-pkg-config' OpenEXR --cflags --libs`
++        '$(TEST_FILE)' -o '$(PREFIX)/$(TARGET)/bin/test-$(PKG).exe' \
++        `$(TARGET)-pkg-config OpenEXR --cflags --libs`
+ endef
+diff --git a/src/openh264-test.cpp b/src/openh264-test.cpp
+new file mode 100644
+index 00000000..9168382b
+--- /dev/null
++++ b/src/openh264-test.cpp
+@@ -0,0 +1,60 @@
++/*
++    This file is part of MXE. See LICENSE.md for licensing information.
++
++    Initial test file scaffold generated using the "gsrc" tool:
++    https://github.com/hkunz/git-fetcher
++
++    Compilation (pkg-config):
++
++    ./usr/bin/x86_64-w64-mingw32.static-g++ \
++        src/openh264-test.cpp \
++        $(./usr/bin/x86_64-w64-mingw32.static-pkg-config --cflags --libs openh264) \
++        -o usr/x86_64-w64-mingw32.static/bin/test-openh264.exe
++
++    Compilation (manual):
++
++    ./usr/bin/x86_64-w64-mingw32.static-g++ \
++        src/openh264-test.cpp \
++        -I usr/x86_64-w64-mingw32.static/include \
++        -L usr/x86_64-w64-mingw32.static/lib \
++        -lopenh264 \
++        -o usr/x86_64-w64-mingw32.static/bin/test-openh264.exe
++*/
++
++#include <iostream>
++#include "wels/codec_api.h"
++
++int main() {
++    ISVCEncoder* encoder = nullptr;
++
++    // Create encoder
++    if (WelsCreateSVCEncoder(&encoder) != 0 || !encoder) {
++        std::cerr << "Failed to create encoder." << std::endl;
++        return 1;
++    }
++
++    // Get default extended encoding parameters
++    SEncParamExt paramExt;
++    encoder->GetDefaultParams(&paramExt);
++
++    // Modify parameters
++    paramExt.iPicWidth = 640;
++    paramExt.iPicHeight = 480;
++    paramExt.iTargetBitrate = 500000; // 500 kbps
++
++    // Initialize encoder
++    if (encoder->Initialize(reinterpret_cast<const SEncParamBase*>(&paramExt)) != 0) {
++        std::cerr << "Failed to initialize encoder." << std::endl;
++        encoder->Uninitialize();
++        WelsDestroySVCEncoder(encoder);
++        return 1;
++    }
++
++    std::cout << "Encoder initialized successfully!" << std::endl;
++
++    // Uninitialize and destroy
++    encoder->Uninitialize();
++    WelsDestroySVCEncoder(encoder);
++
++    return 0;
++}
+diff --git a/src/openh264.mk b/src/openh264.mk
+new file mode 100644
+index 00000000..cd2b345a
+--- /dev/null
++++ b/src/openh264.mk
+@@ -0,0 +1,29 @@
++# This file is part of MXE. See LICENSE.md for licensing information.
++# Initial package scaffold generated with the "gsrc" tool:
++# https://github.com/hkunz/git-fetcher
++
++PKG             := openh264
++$(PKG)_WEBSITE  := https://www.openh264.org/
++$(PKG)_DESCR    := H.264/AVC encoder/decoder library for real-time video
++$(PKG)_VERSION  := 2.6.0
++$(PKG)_IGNORE   :=
++$(PKG)_CHECKSUM := 558544ad358283a7ab2930d69a9ceddf913f4a51ee9bf1bfb9e377322af81a69
++$(PKG)_GH_CONF  := cisco/openh264/tags,v
++$(PKG)_DEPS     := cc meson-wrapper
++
++define $(PKG)_BUILD
++
++	# configure package with meson
++	$(MXE_MESON_WRAPPER) $(MXE_MESON_OPTS) \
++		--buildtype=release \
++		"$(BUILD_DIR)" "$(SOURCE_DIR)"
++
++	# build package and install
++	$(MXE_NINJA) -C "$(BUILD_DIR)" -j $(JOBS)
++	$(MXE_NINJA) -C "$(BUILD_DIR)" -j 1 install
++
++	# compile a test program to verify the library is usable
++	"$(TARGET)-g++" -Wall -Wextra "$(TEST_FILE)" \
++		-o "$(PREFIX)/$(TARGET)/bin/test-$(PKG).exe" \
++		`"$(TARGET)-pkg-config" "$(PKG)" --cflags --libs`
++endef
+diff --git a/src/openimageio-1-fixes.patch b/src/openimageio-1-fixes.patch
+new file mode 100644
+index 00000000..e6661411
+--- /dev/null
++++ b/src/openimageio-1-fixes.patch
+@@ -0,0 +1,16 @@
++diff --git a/src/build-scripts/OpenImageIO.pc.in b/src/build-scripts/OpenImageIO.pc.in
++index fac3cf531..62bd1319a 100644
++--- a/src/build-scripts/OpenImageIO.pc.in
+++++ b/src/build-scripts/OpenImageIO.pc.in
++@@ -6,5 +6,8 @@ includedir=${prefix}/include
++ Name: OpenImageIO
++ Description: OpenImageIO is a library for reading and writing images.
++ Version: @PROJECT_VERSION_MAJOR@.@PROJECT_VERSION_MINOR@.@PROJECT_VERSION_PATCH@.@PROJECT_VERSION_TWEAK@
++-Libs: -L${libdir} -lOpenImageIO -lOpenImageIO_Util
++-Cflags: -I${includedir}
+++Requires: OpenColorIO Imath OpenEXR zlib
+++Requires.private: minizip libjpeg libtiff-4 libheif libjxl libopenjp2 openjph uhdr openvdb tbb libavutil libavcodec libavformat libswscale expat pystring yaml-cpp libraw_r ptex
+++Libs: -L${libdir} -lOpenImageIO -lOpenImageIO_Util -ljxl_threads -lws2_32 -lwinmm
+++Libs.private: -lgif
+++Cflags: -I${includedir} -DOIIO_STATIC_DEFINE
++\ No newline at end of file
+diff --git a/src/openimageio-test.cpp b/src/openimageio-test.cpp
+new file mode 100644
+index 00000000..2bac7ae9
+--- /dev/null
++++ b/src/openimageio-test.cpp
+@@ -0,0 +1,47 @@
++/*
++    This file is part of MXE. See LICENSE.md for licensing information.
++
++    Initial test file scaffold generated using the "gsrc" tool:
++    https://github.com/hkunz/git-fetcher
++
++    Compilation (pkg-config):
++
++    ./usr/bin/x86_64-w64-mingw32.static-g++ \
++        src/openimageio-test.cpp \
++        $(./usr/bin/x86_64-w64-mingw32.static-pkg-config --cflags --libs OpenImageIO) \
++        -o usr/x86_64-w64-mingw32.static/bin/test-openimageio.exe
++*/
++
++#include <OpenImageIO/imageio.h>
++#include <iostream>
++#include <vector>
++
++int main()
++{
++    const char* filename = "checker_with_alpha.exr";
++
++    std::unique_ptr<OpenImageIO::v3_1::ImageInput> in =
++        OpenImageIO::v3_1::ImageInput::open(filename);
++
++    if (!in) {
++        std::cerr << "open failed\n";
++        return 1;
++    }
++
++    const OpenImageIO::v3_1::ImageSpec& spec = in->spec();
++
++    std::cout << spec.width << "x" << spec.height << "\n";
++
++    std::vector<float> pixels(spec.width * spec.height * spec.nchannels);
++
++    if (!in->read_image(0, 0, 0, spec.nchannels,
++                        OpenImageIO::v3_1::TypeFloat,
++                        pixels.data()))
++    {
++        std::cerr << "read failed\n";
++        return 1;
++    }
++
++    std::cout << "OK\n";
++    return 0;
++}
+\ No newline at end of file
+diff --git a/src/openimageio.mk b/src/openimageio.mk
+new file mode 100644
+index 00000000..e0e80dbb
+--- /dev/null
++++ b/src/openimageio.mk
+@@ -0,0 +1,96 @@
++# This file is part of MXE. See LICENSE.md for licensing information.
++# Initial package scaffold generated with the "gsrc" tool:
++# https://github.com/hkunz/git-fetcher
++
++PKG             := openimageio
++$(PKG)_WEBSITE  := https://openimageio.readthedocs.org
++$(PKG)_DESCR    := Reading, writing, and processing images in a wide variety of file formats, using a format-agnostic API, aimed at VFX applications.
++$(PKG)_VERSION  := 3.1.12.0
++$(PKG)_IGNORE   :=
++$(PKG)_CHECKSUM := 24aa5a7af5c7a98887a8f495e18079d82ef73913370e906fa5d73016d37964c7
++$(PKG)_GH_CONF  := AcademySoftwareFoundation/OpenImageIO/tags,v
++$(PKG)_DEPS     := cc bzip2 boost dcmtk ffmpeg freetype giflib imath libjpeg-turbo jxl jasper libraw heif opencolorio openexr openjpeg openvdb libpng pkgconf ptex robin-map onetbb tiff pthreads libwebp zlib expat fmt libdeflate uhdr minizip-ng openjph pystring libyaml
++
++define $(PKG)_BUILD
++
++	# ======================================================================
++	# Many modern CMake packages (including OpenImageIO) expect imported
++	# targets like AOM::aom or zstd::libzstd or LibLZMA::LibLZMA.
++	#
++	# MXE provides these libraries, but does not always export matching
++	# CMake targets. These shims define the missing targets so CMake
++	# configuration can proceed without modifying upstream projects.
++	#
++	# Future improvement: replace with proper CMake package configs per
++	# dependency where available.
++	# ======================================================================
++
++	printf '%s\n' \
++	'if(NOT TARGET LibLZMA::LibLZMA)' \
++	'    add_library(LibLZMA::LibLZMA STATIC IMPORTED GLOBAL)' \
++	'    set_target_properties(LibLZMA::LibLZMA PROPERTIES' \
++	'        IMPORTED_LOCATION "${CMAKE_PREFIX_PATH}/lib/liblzma.a"' \
++	'    )' \
++	'endif()' \
++	'if(NOT TARGET zstd::libzstd)' \
++	'    add_library(zstd::libzstd STATIC IMPORTED GLOBAL)' \
++	'    set_target_properties(zstd::libzstd PROPERTIES' \
++	'        IMPORTED_LOCATION "${CMAKE_PREFIX_PATH}/lib/libzstd.a"' \
++	'    )' \
++	'endif()' \
++	'if(NOT TARGET AOM::aom)' \
++	'    add_library(AOM::aom STATIC IMPORTED GLOBAL)' \
++	'    set_target_properties(AOM::aom PROPERTIES' \
++	'        IMPORTED_LOCATION "${CMAKE_PREFIX_PATH}/lib/libaom.a"' \
++	'    )' \
++	'endif()' \
++	> "$(BUILD_DIR)/mxe-cmake-shims.cmake"
++
++	# configure package with cmake
++	cd "$(BUILD_DIR)" && "$(TARGET)-cmake" "$(SOURCE_DIR)" \
++		-DCMAKE_PROJECT_TOP_LEVEL_INCLUDES="$(BUILD_DIR)/mxe-cmake-shims.cmake" \
++		-DCMAKE_INSTALL_PREFIX="$(PREFIX)/$(TARGET)" \
++		-DCMAKE_PREFIX_PATH="$(PREFIX)/$(TARGET)" \
++		-DBUILD_SHARED_LIBS=$(CMAKE_SHARED_BOOL) \
++		-DCMAKE_C_FLAGS="-DJXL_STATIC_DEFINE" \
++		-DCMAKE_CXX_FLAGS="-DJXL_STATIC_DEFINE" \
++		-DOIIO_STATIC=ON \
++		-DBUILD_DOCS=OFF \
++		-DBUILD_OIIOUTIL_ONLY=OFF \
++		-DCLANG_TIDY=OFF \
++		-DCLANG_TIDY_FIX=OFF \
++		-DCODECOV=OFF \
++		-DEMBEDPLUGINS=ON \
++		-DOIIO_BUILD_PLUGINS=OFF \
++		-DENABLE_FAST_MATH=OFF \
++		-DEXTRA_WARNINGS=OFF \
++		-DIGNORE_HOMEBREWED_DEPS=OFF \
++		-DINSTALL_DOCS=OFF \
++		-DINSTALL_FONTS=OFF \
++		-DLINKSTATIC=ON \
++		-DOIIO_BUILD_PROFILER=OFF \
++		-DOIIO_BUILD_TESTS=OFF \
++		-DOIIO_BUILD_TOOLS=OFF \
++		-DOIIO_INNER_NAMESPACE_INCLUDE_PATCH=OFF \
++		-DOIIO_THREAD_ALLOW_DCLP=ON \
++		-DPYLIB_INCLUDE_SONAME=OFF \
++		-DPYLIB_LIB_PREFIX=OFF \
++		-DSTOP_ON_WARNING=OFF \
++		-DTIME_COMMANDS=OFF \
++		-DUSE_CCACHE=ON \
++		-DUSE_LIBCPLUSPLUS=OFF \
++		-DUSE_PYTHON=OFF \
++		-DVERBOSE=OFF \
++		-DVISIBILITY_INLINES_HIDDEN=ON \
++		-DCMAKE_BUILD_TYPE=Release
++
++	# build package and install
++	$(MAKE) -C "$(BUILD_DIR)" -j $(JOBS)
++	$(MAKE) -C "$(BUILD_DIR)" -j 1 install
++
++	# compile a test program to verify the library is usable
++	"$(TARGET)-g++" -Wall -Wextra "$(TEST_FILE)" \
++		-o "$(PREFIX)/$(TARGET)/bin/test-$(PKG).exe" \
++		`"$(TARGET)-pkg-config" "OpenImageIO" --cflags --libs`
++	cp "$(SOURCE_DIR)/testsuite/common/checker_with_alpha.exr" "$(PREFIX)/$(TARGET)/bin/"
++endef
+diff --git a/src/openjph-test.cpp b/src/openjph-test.cpp
+new file mode 100644
+index 00000000..e08ba160
+--- /dev/null
++++ b/src/openjph-test.cpp
+@@ -0,0 +1,40 @@
++/*
++    This file is part of MXE. See LICENSE.md for licensing information.
++
++    Initial test file scaffold generated using the "gsrc" tool:
++    https://github.com/hkunz/git-fetcher
++
++    Compilation (pkg-config):
++
++    ./usr/bin/x86_64-w64-mingw32.static-g++ \
++        src/openjph-test.cpp \
++        $(./usr/bin/x86_64-w64-mingw32.static-pkg-config --cflags --libs openjph) \
++        -o usr/x86_64-w64-mingw32.static/bin/test-openjph.exe
++
++    Compilation (manual):
++
++    ./usr/bin/x86_64-w64-mingw32.static-g++ \
++        src/openjph-test.cpp \
++        -I usr/x86_64-w64-mingw32.static/include/ \
++        -L usr/x86_64-w64-mingw32.static/lib/ \
++        -lopenjph \
++        -o usr/x86_64-w64-mingw32.static/bin/test-openjph.exe
++*/
++
++#include <iostream>
++#include <openjph/ojph_version.h>
++#include <openjph/ojph_codestream.h>
++
++int main() {
++    // Print OpenJPH version
++    std::cout << "OpenJPH version: "
++              << OPENJPH_VERSION_MAJOR << "."
++              << OPENJPH_VERSION_MINOR
++              << std::endl;
++
++    // Minimal codestream object creation (no method calls)
++    ojph::codestream cs;
++
++    std::cout << "Codestream object created successfully!" << std::endl;
++    return 0;
++}
+diff --git a/src/openjph.mk b/src/openjph.mk
+new file mode 100644
+index 00000000..8bd6c650
+--- /dev/null
++++ b/src/openjph.mk
+@@ -0,0 +1,30 @@
++# This file is part of MXE. See LICENSE.md for licensing information.
++# Initial package scaffold generated with the "gsrc" tool:
++# https://github.com/hkunz/git-fetcher
++
++PKG             := openjph
++$(PKG)_WEBSITE  := https://openjph.org/
++$(PKG)_DESCR    := OpenJPH - High Throughput JPEG 2000 (JPH / HTJ2K) library
++$(PKG)_IGNORE   :=
++$(PKG)_VERSION  := 0.26.3
++$(PKG)_CHECKSUM := 29de006da7f1e8cf0cd7c3ec424cf29103e465052c00b5a5f0ccb7e1f917bb3f
++$(PKG)_GH_CONF  := aous72/OpenJPH/tags
++$(PKG)_DEPS     := cc zlib
++
++define $(PKG)_BUILD
++    cd '$(BUILD_DIR)' && '$(TARGET)-cmake' '$(SOURCE_DIR)' \
++        -DCMAKE_INSTALL_PREFIX='$(PREFIX)/$(TARGET)' \
++        -DBUILD_SHARED_LIBS=OFF \
++        -DOJPH_BUILD_TESTS=OFF \
++        -DOJPH_BUILD_EXECUTABLES=ON \
++        -DOJPH_DISABLE_SIMD=ON \
++        -DOJPH_ENABLE_TIFF_SUPPORT=OFF \
++        -DCMAKE_BUILD_TYPE=Release
++
++    $(MAKE) -C "$(BUILD_DIR)" -j "$(JOBS)"
++    $(MAKE) -C "$(BUILD_DIR)" -j 1 install
++
++    '$(TARGET)-g++' \
++        '$(TEST_FILE)' -o '$(PREFIX)/$(TARGET)/bin/test-openjph.exe' \
++        `'$(TARGET)-pkg-config' openjph --cflags --libs`
++endef
+diff --git a/src/openmpt-test.c b/src/openmpt-test.c
+new file mode 100644
+index 00000000..7e3fc96a
+--- /dev/null
++++ b/src/openmpt-test.c
+@@ -0,0 +1,111 @@
++/*
++    This file is part of MXE. See LICENSE.md for licensing information.
++
++    Initial test file scaffold generated using the "gsrc" tool:
++    https://github.com/hkunz/git-fetcher
++
++    Compilation (pkg-config):
++
++    ./usr/bin/x86_64-w64-mingw32.static-g++ \
++        src/openmpt-test.c \
++        $(./usr/bin/x86_64-w64-mingw32.static-pkg-config --cflags --libs libopenmpt) \
++        -lmpg123 -lz -lshlwapi \
++        -o usr/x86_64-w64-mingw32.static/bin/test-openmpt.exe
++
++    Compilation (manual):
++
++    ./usr/bin/x86_64-w64-mingw32.static-gcc \
++        src/openmpt-test.c \
++        -I usr/x86_64-w64-mingw32.static/include \
++        -L usr/x86_64-w64-mingw32.static/lib \
++        -lopenmpt -lvorbisfile -lvorbis -logg -lmpg123 -lz -lshlwapi \
++        -lstdc++ \
++        -o usr/x86_64-w64-mingw32.static/bin/test-openmpt.exe
++
++    What this program does:
++
++    - Loads a tracker music file using libopenmpt
++    - Decodes a small block of audio (PCM samples)
++    - Prints basic info (e.g. title)
++    - Verifies that libopenmpt is correctly linked and working
++
++    Supported input formats:
++
++    - .xm  (FastTracker II)
++    - .it  (Impulse Tracker)
++    - .s3m (Scream Tracker 3)
++    - .mod (Amiga / ProTracker)
++    - .mptm and other libopenmpt-supported modules
++
++    Usage:
++        test-libopenmpt.exe <module_file>
++
++    Example:
++        test-libopenmpt.exe song.xm
++
++    Sample files:
++    https://modarchive.org/
++    Example: https://api.modarchive.org/downloads.php?moduleid=49757
++*/
++
++#include <libopenmpt/libopenmpt.h>
++#include <stdio.h>
++#include <stdlib.h>
++
++int main(int argc, char **argv)
++{
++    if (argc < 2) {
++        fprintf(stderr, "Usage: %s <module file>\n", argv[0]);
++        return 1;
++    }
++
++    FILE *f = fopen(argv[1], "rb");
++    if (!f) return 1;
++
++    fseek(f, 0, SEEK_END);
++    long size = ftell(f);
++    fseek(f, 0, SEEK_SET);
++
++    unsigned char *data = (unsigned char*)malloc(size);
++    fread(data, 1, size, f);
++    fclose(f);
++
++    int error = 0;
++    const char *error_message = NULL;
++
++    openmpt_module *mod = openmpt_module_create_from_memory2(
++        data,
++        (size_t)size,
++        NULL,   // logfunc
++        NULL,   // loguser
++        NULL,   // errfunc
++        NULL,   // erruser
++        &error,
++        &error_message,
++        NULL    // initial_ctls
++    );
++
++    free(data);
++
++    if (!mod) {
++        fprintf(stderr, "Failed: %s\n", error_message ? error_message : "unknown");
++        return 1;
++    }
++
++    printf("Title: %s\n",
++        openmpt_module_get_metadata(mod, "title"));
++
++    int16_t buffer[1024 * 2];
++
++    size_t frames = openmpt_module_read_interleaved_stereo(
++        mod,
++        48000,
++        1024,
++        buffer
++    );
++
++    printf("Decoded frames: %zu\n", frames);
++
++    openmpt_module_destroy(mod);
++    return 0;
++}
+diff --git a/src/openmpt.mk b/src/openmpt.mk
+new file mode 100644
+index 00000000..f795d759
+--- /dev/null
++++ b/src/openmpt.mk
+@@ -0,0 +1,45 @@
++# This file is part of MXE. See LICENSE.md for licensing information.
++# Initial package scaffold generated with the "gsrc" tool:
++# https://github.com/hkunz/git-fetcher
++
++PKG             := openmpt
++$(PKG)_WEBSITE  := https://lib.openmpt.org
++$(PKG)_DESCR    := Tracker music module decoding library (MOD, XM, IT, S3M) with C and C++ API.
++$(PKG)_VERSION  := 0.7.19
++$(PKG)_IGNORE   :=
++$(PKG)_CHECKSUM := 3c619bb36b3d9cd10b5531ebb83cac7fe38386d0614f9bb1a9a758010bc162d1
++$(PKG)_FILE     := lib$(PKG)-$($(PKG)_VERSION)+release.autotools.tar.gz
++$(PKG)_URL      := https://lib.$(PKG).org/files/lib$(PKG)/src/$($(PKG)_FILE)
++$(PKG)_SUBDIR   := lib$(PKG)-$($(PKG)_VERSION)+release.autotools
++$(PKG)_DEPS     := cc zlib mpg123 ogg vorbis flac libsndfile portaudio
++
++define $(PKG)_BUILD
++
++	# Configure package
++	cd "$(BUILD_DIR)" && "$(SOURCE_DIR)/configure" \
++		$(MXE_CONFIGURE_OPTS) \
++		--host="$(TARGET)" \
++		--prefix="$(PREFIX)/$(TARGET)" \
++		--disable-shared \
++        --enable-static \
++        --disable-examples \
++        --disable-openmpt123 \
++        --with-zlib \
++        --with-mpg123 \
++        --with-ogg \
++        --with-vorbis \
++        --with-flac \
++        --with-sndfile \
++        --with-portaudio \
++        --without-sdl \
++        --without-sdl2
++
++	# build package and install
++	$(MAKE) -C "$(BUILD_DIR)" -j $(JOBS)
++	$(MAKE) -C "$(BUILD_DIR)" -j 1 install
++
++	# compile a test program to verify the library is usable
++	"$(TARGET)-g++" -Wall -Wextra "$(TEST_FILE)" \
++		-o "$(PREFIX)/$(TARGET)/bin/test-$(PKG).exe" \
++		`"$(TARGET)-pkg-config" "lib$(PKG)" --cflags --libs`
++endef
+diff --git a/src/openvdb-test.cpp b/src/openvdb-test.cpp
+new file mode 100644
+index 00000000..0bc851cc
+--- /dev/null
++++ b/src/openvdb-test.cpp
+@@ -0,0 +1,60 @@
++/*
++    This file is part of MXE. See LICENSE.md for licensing information.
++
++    Initial test file scaffold generated using the "gsrc" tool:
++    https://github.com/hkunz/git-fetcher
++
++    Compilation (pkg-config):
++
++    ./usr/bin/x86_64-w64-mingw32.static-g++ \
++        src/openvdb-test.cpp \
++        $(./usr/bin/x86_64-w64-mingw32.static-pkg-config --cflags --libs openvdb) \
++        -o usr/x86_64-w64-mingw32.static/bin/test-openvdb.exe
++
++    Compilation (manual):
++
++    ./usr/bin/x86_64-w64-mingw32.static-g++ \
++        src/openvdb-test.cpp \
++        -I usr/x86_64-w64-mingw32.static/include \
++        -L usr/x86_64-w64-mingw32.static/lib \
++        -lopenvdb \
++        -o usr/x86_64-w64-mingw32.static/bin/test-openvdb.exe
++*/
++
++#include <openvdb/openvdb.h>
++#include <iostream>
++
++int main()
++{
++    try {
++        // Required: initialize OpenVDB
++        openvdb::initialize();
++
++        // Create an empty float grid
++        openvdb::FloatGrid::Ptr grid = openvdb::FloatGrid::create();
++
++        // Get accessor to modify voxels
++        openvdb::FloatGrid::Accessor accessor = grid->getAccessor();
++
++        // Set a voxel value
++        openvdb::Coord xyz(1, 2, 3);
++        accessor.setValue(xyz, 5.0f);
++
++        // Read it back
++        float value = accessor.getValue(xyz);
++
++        std::cout << "Voxel value at (1,2,3): " << value << std::endl;
++
++        if (value == 5.0f) {
++            std::cout << "OpenVDB test PASSED" << std::endl;
++            return 0;
++        } else {
++            std::cout << "OpenVDB test FAILED" << std::endl;
++            return 1;
++        }
++    }
++    catch (const std::exception &e) {
++        std::cerr << "Exception: " << e.what() << std::endl;
++        return 1;
++    }
++}
+\ No newline at end of file
+diff --git a/src/openvdb.mk b/src/openvdb.mk
+new file mode 100644
+index 00000000..626e5cee
+--- /dev/null
++++ b/src/openvdb.mk
+@@ -0,0 +1,86 @@
++# This file is part of MXE. See LICENSE.md for licensing information.
++# Initial package scaffold generated with the "gsrc" tool:
++# https://github.com/hkunz/git-fetcher
++
++include src/common/pkgconfig-generator.mk
++
++PKG             := openvdb
++$(PKG)_WEBSITE  := http://www.openvdb.org/
++$(PKG)_DESCR    := OpenVDB - Sparse volume data structure and tools
++$(PKG)_VERSION  := 13.0.0
++$(PKG)_IGNORE   :=
++$(PKG)_CHECKSUM := 4d6a91df5f347017496fe8d22c3dbb7c4b5d7289499d4eb4d53dd2c75bb454e1
++$(PKG)_GH_CONF  := AcademySoftwareFoundation/openvdb/tags,v
++$(PKG)_DEPS     := cc blosc boost glew imath libjpeg-turbo jemalloc openexr libpng pkgconf onetbb pthreads zlib glfw3
++
++define $(PKG)_BUILD
++
++	# configure package with cmake
++	cd "$(BUILD_DIR)" && "$(TARGET)-cmake" "$(SOURCE_DIR)" \
++		-DCMAKE_INSTALL_PREFIX="$(PREFIX)/$(TARGET)" \
++		-DCMAKE_PREFIX_PATH="$(PREFIX)/$(TARGET)" \
++		-DBUILD_SHARED_LIBS=$(CMAKE_SHARED_BOOL) \
++		-DDISABLE_CMAKE_SEARCH_PATHS=OFF \
++		-DDISABLE_DEPENDENCY_VERSION_CHECKS=OFF \
++		-DMSVC_COMPRESS_PDB=OFF \
++		-DOPENVDB_BUILD_AX=OFF \
++		-DOPENVDB_BUILD_AX_UNITTESTS=OFF \
++		-DOPENVDB_BUILD_BINARIES=ON \
++		-DOPENVDB_BUILD_CORE=ON \
++		-DOPENVDB_BUILD_DOCS=OFF \
++		-DOPENVDB_BUILD_HOUDINI_ABITESTS=OFF \
++		-DOPENVDB_BUILD_HOUDINI_PLUGIN=OFF \
++		-DOPENVDB_BUILD_MAYA_PLUGIN=OFF \
++		-DOPENVDB_BUILD_NANOVDB=OFF \
++		-DOPENVDB_BUILD_PYTHON_MODULE=OFF \
++		-DOPENVDB_BUILD_UNITTESTS=OFF \
++		-DOPENVDB_CORE_SHARED=ON \
++		-DOPENVDB_CORE_STATIC=ON \
++		-DOPENVDB_CXX_STRICT=OFF \
++		-DOPENVDB_ENABLE_ASSERTS=OFF \
++		-DOPENVDB_ENABLE_RPATH=ON \
++		-DOPENVDB_ENABLE_UNINSTALL=ON \
++		-DOPENVDB_FUTURE_DEPRECATION=ON \
++		-DOPENVDB_INSTALL_CMAKE_MODULES=ON \
++		-DOPENVDB_USE_DELAYED_LOADING=ON \
++		-DOPENVDB_USE_DEPRECATED_ABI_11=OFF \
++		-DOPENVDB_USE_DEPRECATED_ABI_12=OFF \
++		-DOPENVDB_USE_FUTURE_ABI_14=OFF \
++		-DUSE_AX=OFF \
++		-DUSE_BLOSC=ON \
++		-DUSE_CCACHE=ON \
++		-DUSE_COLORED_OUTPUT=OFF \
++		-DUSE_EXPLICIT_INSTANTIATION=ON \
++		-DUSE_EXR=OFF \
++		-DUSE_HOUDINI=OFF \
++		-DUSE_IMATH_HALF=OFF \
++		-DUSE_LOG4CPLUS=OFF \
++		-DUSE_MAYA=OFF \
++		-DUSE_NANOVDB=OFF \
++		-DUSE_PKGCONFIG=ON \
++		-DUSE_PNG=OFF \
++		-DUSE_STATIC_DEPENDENCIES=OFF \
++		-DUSE_TBB=ON \
++		-DUSE_ZLIB=ON \
++		-DCMAKE_BUILD_TYPE=Release
++
++	# build package and install
++	$(MAKE) -C "$(BUILD_DIR)" -j $(JOBS)
++	$(MAKE) -C "$(BUILD_DIR)" -j 1 install
++
++	# Only needed if the project does not ship a .pc file
++	$(call GENERATE_PC, \
++		$(PREFIX)/$(TARGET), \
++		$(PKG), \
++		$($(PKG)_DESCR), \
++		$($(PKG)_VERSION), \
++		, \
++		, \
++		-lopenvdb, \
++	)
++
++	# compile a test program to verify the library is usable
++	"$(TARGET)-g++" -Wall -Wextra "$(TEST_FILE)" \
++		-o "$(PREFIX)/$(TARGET)/bin/test-$(PKG).exe" \
++		`"$(TARGET)-pkg-config" "$(PKG)" --cflags --libs`
++endef
+diff --git a/src/partio-test.cpp b/src/partio-test.cpp
+new file mode 100644
+index 00000000..009f3e89
+--- /dev/null
++++ b/src/partio-test.cpp
+@@ -0,0 +1,42 @@
++/*
++    This file is part of MXE. See LICENSE.md for licensing information.
++
++    Initial test file scaffold generated using the "gsrc" tool:
++    https://github.com/hkunz/git-fetcher
++
++    Compilation (pkg-config):
++
++    ./usr/bin/x86_64-w64-mingw32.static-g++ \
++        src/partio-test.cpp \
++        $(./usr/bin/x86_64-w64-mingw32.static-pkg-config --cflags --libs partio) \
++        -o usr/x86_64-w64-mingw32.static/bin/test-partio.exe
++
++    Compilation (manual):
++
++    ./usr/bin/x86_64-w64-mingw32.static-g++ \
++        src/partio-test.cpp \
++        -I usr/x86_64-w64-mingw32.static/include \
++        -L usr/x86_64-w64-mingw32.static/lib \
++        -lpartio -lz -lpthread \
++        -o usr/x86_64-w64-mingw32.static/bin/test-partio.exe
++*/
++
++#include <Partio.h>
++#include <cstdio>
++
++int main() {
++    Partio::ParticlesDataMutable* particles = Partio::create();
++    if (!particles) {
++        printf("Failed to create Partio particles\n");
++        return 1;
++    }
++
++    // Optionally add a particle
++    int idx = particles->addParticle();
++    printf("Added particle index: %d\n", idx);
++
++    // Clean up
++    particles->release();
++    printf("Partio test completed successfully.\n");
++    return 0;
++}
+diff --git a/src/partio.mk b/src/partio.mk
+new file mode 100644
+index 00000000..15afe8a8
+--- /dev/null
++++ b/src/partio.mk
+@@ -0,0 +1,52 @@
++# This file is part of MXE. See LICENSE.md for licensing information.
++# Initial package scaffold generated with the "gsrc" tool:
++# https://github.com/hkunz/git-fetcher
++
++include src/common/pkgconfig-generator.mk
++
++PKG             := partio
++$(PKG)_WEBSITE  := https://www.disneyanimation.com/open-source/partio/
++$(PKG)_DESCR    := C++ library for reading, writing, and manipulating common particle formats (PDB, BGEO, PTC), with optional Python bindings
++$(PKG)_VERSION  := 1.20.0
++$(PKG)_IGNORE   :=
++$(PKG)_CHECKSUM := e60a89364f2b5d9c9b1f143175fc1a5018027a59bb31af56e5df88806b506e49
++$(PKG)_GH_CONF  := wdas/partio/tags,v
++$(PKG)_DEPS     := cc freeglut pthreads zlib
++
++define $(PKG)_BUILD
++
++	# configure package with cmake
++	cd "$(BUILD_DIR)" && "$(TARGET)-cmake" "$(SOURCE_DIR)" \
++		-DCMAKE_INSTALL_PREFIX="$(PREFIX)/$(TARGET)" \
++		-DCMAKE_PREFIX_PATH="$(PREFIX)/$(TARGET)" \
++		-DBUILD_SHARED_LIBS=$(CMAKE_SHARED_BOOL) \
++		-DBUILD_TESTING=OFF \
++		-DPARTIO_BUILD_DOCS=ON \
++		-DPARTIO_BUILD_PYTHON=OFF \
++		-DPARTIO_BUILD_SHARED_LIBS=OFF \
++		-DPARTIO_BUILD_TOOLS=OFF \
++		-DPARTIO_ENABLE_TESTING=OFF \
++		-DPARTIO_ORIGIN_RPATH=OFF \
++		-DPARTIO_USE_GLVND=ON \
++		-DCMAKE_BUILD_TYPE=Release
++
++	# build package and install
++	$(MAKE) -C "$(BUILD_DIR)" -j $(JOBS)
++	$(MAKE) -C "$(BUILD_DIR)" -j 1 install
++
++	# Only needed if the project does not ship a .pc file
++	$(call GENERATE_PC, \
++		$(PREFIX)/$(TARGET), \
++		$(PKG), \
++		$($(PKG)_DESCR), \
++		$($(PKG)_VERSION), \
++		pthreads zlib, \
++		, \
++		-lpartio -lz -lpthread \
++	)
++
++	# compile a test program to verify the library is usable
++	"$(TARGET)-g++" -Wall -Wextra "$(TEST_FILE)" \
++		-o "$(PREFIX)/$(TARGET)/bin/test-$(PKG).exe" \
++		`"$(TARGET)-pkg-config" "$(PKG)" --cflags --libs`
++endef
+diff --git a/src/ptex.mk b/src/ptex.mk
+new file mode 100644
+index 00000000..1bbcfe8b
+--- /dev/null
++++ b/src/ptex.mk
+@@ -0,0 +1,45 @@
++# This file is part of MXE. See LICENSE.md for licensing information.
++# Initial package scaffold generated with the "gsrc" tool:
++# https://github.com/hkunz/git-fetcher
++
++PKG             := ptex
++$(PKG)_WEBSITE  := https://ptex.us/
++$(PKG)_DESCR    := Per-Face Texture Mapping for Production Rendering
++$(PKG)_VERSION  := 2.5.2
++$(PKG)_IGNORE   :=
++$(PKG)_CHECKSUM := dd95fbea4b50e9e68fd042f540fb83157a0ff25053066c3439d4527de3621d34
++$(PKG)_GH_CONF  := wdas/ptex/tags,v
++$(PKG)_DEPS     := cc pthreads zlib libdeflate
++
++define $(PKG)_BUILD
++
++	# Ptex installs its pkg-config file into share/pkgconfig, which is not
++	# searched by MXE's pkg-config configuration. This causes downstream
++	# builds (e.g. OpenImageIO) to fail with errors like:
++	# "Package ptex was not found in the pkg-config search path."
++	# We patch it to lib/pkgconfig so dependency discovery works correctly
++
++	tmpfile="$(mktemp /tmp/ptex.cmake.XXXXXX)" && \
++	$(SED) 's|DESTINATION share/pkgconfig|DESTINATION lib/pkgconfig|g' \
++		"$(SOURCE_DIR)/src/build/CMakeLists.txt" > "$tmpfile" && \
++	mv "$tmpfile" "$(SOURCE_DIR)/src/build/CMakeLists.txt"
++
++	# configure package with cmake
++	cd "$(BUILD_DIR)" && "$(TARGET)-cmake" "$(SOURCE_DIR)" \
++		-DCMAKE_INSTALL_PREFIX="$(PREFIX)/$(TARGET)" \
++		-DCMAKE_PREFIX_PATH="$(PREFIX)/$(TARGET)" \
++		-DBUILD_SHARED_LIBS=$(CMAKE_SHARED_BOOL) \
++		-DPTEX_BUILD_SHARED_LIBS=$(CMAKE_SHARED_BOOL) \
++		-DPTEX_BUILD_STATIC_LIBS=$(CMAKE_STATIC_BOOL) \
++		-DPTEX_BUILD_DOCS=OFF \
++		-DPRMAN_15_COMPATIBLE_PTEX=OFF \
++		-DBUILD_TESTING=OFF \
++		-DCMAKE_BUILD_TYPE=Release
++
++	# build package and install
++	$(MAKE) -C "$(BUILD_DIR)" -j $(JOBS)
++	$(MAKE) -C "$(BUILD_DIR)" -j 1 install
++
++	# Ptex library automatically builds a test utility:
++	# $(PREFIX)/$(TARGET)/bin/ptxinfo.exe
++endef
+diff --git a/src/pystring-test.cpp b/src/pystring-test.cpp
+new file mode 100644
+index 00000000..2b0a9b50
+--- /dev/null
++++ b/src/pystring-test.cpp
+@@ -0,0 +1,40 @@
++/*
++    This file is part of MXE. See LICENSE.md for licensing information.
++
++    Initial test file scaffold generated using the "gsrc" tool:
++    https://github.com/hkunz/git-fetcher
++
++    Compilation (pkg-config):
++
++    ./usr/bin/x86_64-w64-mingw32.static-g++ \
++        src/pystring-test.cpp \
++        $(./usr/bin/x86_64-w64-mingw32.static-pkg-config --cflags --libs pystring) \
++        -o usr/x86_64-w64-mingw32.static/bin/test-pystring.exe
++
++    Compilation (manual):
++
++    ./usr/bin/x86_64-w64-mingw32.static-g++ \
++        src/pystring-test.cpp \
++        -I usr/x86_64-w64-mingw32.static/include \
++        -L usr/x86_64-w64-mingw32.static/lib \
++        -lpystring \
++        -o usr/x86_64-w64-mingw32.static/bin/test-pystring.exe
++*/
++
++#include <iostream>
++#include <vector>
++#include <string>
++#include <pystring/pystring.h>
++
++int main() {
++    std::string s = "one,two,three";
++    std::vector<std::string> parts;
++
++    pystring::split(s, parts, ",");
++
++    for (auto &p : parts)
++        std::cout << p << "\n";
++
++    std::cout << "PyString library link test succeeded.\n";
++    return 0;
++}
+diff --git a/src/pystring.mk b/src/pystring.mk
+new file mode 100644
+index 00000000..a1a00248
+--- /dev/null
++++ b/src/pystring.mk
+@@ -0,0 +1,44 @@
++# This file is part of MXE. See LICENSE.md for licensing information.
++# Initial package scaffold generated with the "gsrc" tool:
++# https://github.com/hkunz/git-fetcher
++
++include src/common/pkgconfig-generator.mk
++
++PKG             := pystring
++$(PKG)_WEBSITE  := https://github.com/imageworks/pystring.git
++$(PKG)_DESCR    := C++ functions matching the interface and behavior of python string methods with std::string
++$(PKG)_VERSION  := 1.1.5
++$(PKG)_IGNORE   :=
++$(PKG)_CHECKSUM := 63c30c251b8017c897bd923826f400aee1d6e4f1c22ffbbd2104f150522a2040
++$(PKG)_GH_CONF  := imageworks/pystring/tags,v
++$(PKG)_DEPS     := cc
++
++define $(PKG)_BUILD
++
++	# configure package with cmake
++	cd "$(BUILD_DIR)" && "$(TARGET)-cmake" "$(SOURCE_DIR)" \
++		-DCMAKE_INSTALL_PREFIX="$(PREFIX)/$(TARGET)" \
++		-DCMAKE_PREFIX_PATH="$(PREFIX)/$(TARGET)" \
++		-DBUILD_SHARED_LIBS=$(CMAKE_SHARED_BOOL) \
++		-DCMAKE_BUILD_TYPE=Release
++
++	# build package and install
++	$(MAKE) -C "$(BUILD_DIR)" -j $(JOBS)
++	$(MAKE) -C "$(BUILD_DIR)" -j 1 install
++
++	# Only needed if the project does not ship a .pc file
++	$(call GENERATE_PC, \
++		$(PREFIX)/$(TARGET), \
++		$(PKG), \
++		$($(PKG)_DESCR), \
++		$($(PKG)_VERSION), \
++		, \
++		, \
++		-lpystring, \
++	)
++
++	# compile a test program to verify the library is usable
++	"$(TARGET)-g++" -Wall -Wextra "$(TEST_FILE)" \
++		-o "$(PREFIX)/$(TARGET)/bin/test-$(PKG).exe" \
++		`"$(TARGET)-pkg-config" "$(PKG)" --cflags --libs`
++endef
+diff --git a/src/robin-map-test.cpp b/src/robin-map-test.cpp
+new file mode 100644
+index 00000000..58a81832
+--- /dev/null
++++ b/src/robin-map-test.cpp
+@@ -0,0 +1,46 @@
++/*
++    This file is part of MXE. See LICENSE.md for licensing information.
++
++    Initial test file scaffold generated using the "gsrc" tool:
++    https://github.com/hkunz/git-fetcher
++
++    Compilation (manual):
++
++    ./usr/bin/x86_64-w64-mingw32.static-g++ \
++        src/robin-map-test.cpp \
++        -o usr/x86_64-w64-mingw32.static/bin/test-robin-map.exe
++*/
++
++#include <iostream>
++#include <string>
++#include <tsl/robin_map.h>
++
++int main() {
++
++    tsl::robin_map<std::string, int> map;
++
++    map["apple"] = 1;
++    map["banana"] = 2;
++    map["orange"] = 3;
++
++    // Access values
++    std::cout << "apple = " << map["apple"] << std::endl;
++    std::cout << "banana = " << map["banana"] << std::endl;
++    std::cout << "orange = " << map["orange"] << std::endl;
++
++    // Test lookup
++    auto it = map.find("banana");
++    if (it != map.end()) {
++        std::cout << "Found banana: " << it->second << std::endl;
++    } else {
++        std::cout << "banana not found" << std::endl;
++    }
++
++    // Check non-existing key
++    if (map.find("grape") == map.end()) {
++        std::cout << "grape not found (expected)" << std::endl;
++    }
++
++    std::cout << "robin-map test OK" << std::endl;
++    return 0;
++}
+diff --git a/src/robin-map.mk b/src/robin-map.mk
+new file mode 100644
+index 00000000..cc81933b
+--- /dev/null
++++ b/src/robin-map.mk
+@@ -0,0 +1,33 @@
++# This file is part of MXE. See LICENSE.md for licensing information.
++# Initial package scaffold generated with the "gsrc" tool:
++# https://github.com/hkunz/git-fetcher
++
++include src/common/pkgconfig-generator.mk
++
++PKG             := robin-map
++$(PKG)_WEBSITE  := https://tessil.github.io/robin-map/
++$(PKG)_DESCR    :=  C++ implementation of a fast hash map and hash set using robin hood hashing
++$(PKG)_VERSION  := 1.4.1
++$(PKG)_IGNORE   :=
++$(PKG)_CHECKSUM := 0e3f53a377fdcdc5f9fed7a4c0d4f99e82bbb64175233bd13427fef9a771f4a1
++$(PKG)_GH_CONF  := Tessil/robin-map/tags,v
++$(PKG)_DEPS     := cc boost
++
++define $(PKG)_BUILD
++
++	# configure package with cmake
++	cd "$(BUILD_DIR)" && "$(TARGET)-cmake" "$(SOURCE_DIR)" \
++		-DCMAKE_INSTALL_PREFIX="$(PREFIX)/$(TARGET)" \
++		-DCMAKE_PREFIX_PATH="$(PREFIX)/$(TARGET)" \
++		-DBUILD_SHARED_LIBS=$(CMAKE_SHARED_BOOL) \
++		-DTSL_ROBIN_MAP_ENABLE_INSTALL=ON \
++		-DCMAKE_BUILD_TYPE=Release
++
++	# build package and install
++	$(MAKE) -C "$(BUILD_DIR)" -j $(JOBS)
++	$(MAKE) -C "$(BUILD_DIR)" -j 1 install
++
++	# compile a test program to verify the library is usable
++	"$(TARGET)-g++" -Wall -Wextra "$(TEST_FILE)" \
++		-o "$(PREFIX)/$(TARGET)/bin/test-$(PKG).exe"
++endef
+diff --git a/src/sjpeg-test.cpp b/src/sjpeg-test.cpp
+new file mode 100644
+index 00000000..528ee4d2
+--- /dev/null
++++ b/src/sjpeg-test.cpp
+@@ -0,0 +1,47 @@
++/*
++    This file is part of MXE. See LICENSE.md for licensing information.
++
++    Initial test file scaffold generated using the "gsrc" tool:
++    https://github.com/hkunz/git-fetcher
++
++    Compilation (pkg-config):
++
++    ./usr/bin/x86_64-w64-mingw32.static-g++ \
++        src/sjpeg-test.cpp \
++        $(./usr/bin/x86_64-w64-mingw32.static-pkg-config --cflags --libs sjpeg) \
++        -o usr/x86_64-w64-mingw32.static/bin/test-sjpeg.exe
++
++    Compilation (manual):
++
++    ./usr/bin/x86_64-w64-mingw32.static-g++ \
++        src/sjpeg-test.cpp \
++        -I usr/x86_64-w64-mingw32.static/include/ \
++        -L usr/x86_64-w64-mingw32.static/lib/ \
++        -lsjpeg \
++        -o usr/x86_64-w64-mingw32.static/bin/test-sjpeg.exe
++*/
++
++#include <sjpeg.h>
++#include <iostream>
++
++int main() {
++    int width = 1;
++    int height = 1;
++    unsigned char rgb[3] = { 255, 255, 255 };
++
++    uint8_t* jpeg_buffer = nullptr;
++
++    // quality: 1.0, progressive: 0, YUV mode: SJPEG_YUV_444
++    size_t jpeg_size = SjpegEncode(rgb, width, height, 3, &jpeg_buffer, 1.0f, 0, SJPEG_YUV_444);
++
++    if (!jpeg_buffer || jpeg_size == 0) {
++        std::cerr << "SjpegEncode failed\n";
++        return 1;
++    }
++
++    std::cout << "SjpegEncode succeeded. JPEG size: " << jpeg_size << " bytes\n";
++    std::cout << "[sjpeg-test] Library loaded and API accessible: SUCCESS\n";
++
++    free(jpeg_buffer); // buffer allocated by SjpegEncode
++    return 0;
++}
+diff --git a/src/sjpeg.mk b/src/sjpeg.mk
+new file mode 100644
+index 00000000..fcc2357d
+--- /dev/null
++++ b/src/sjpeg.mk
+@@ -0,0 +1,47 @@
++# This file is part of MXE. See LICENSE.md for licensing information.
++# Initial package scaffold generated with the "gsrc" tool:
++# https://github.com/hkunz/git-fetcher
++
++include src/common/pkgconfig-generator.mk
++
++PKG             := sjpeg
++$(PKG)_WEBSITE  := https://github.com/webmproject/sjpeg.git
++$(PKG)_DESCR    := Lightweight JPEG encoder with simple C API and optional C++ interface
++# Using main branch because there are no tags yet (https://github.com/webmproject/sjpeg/issues/145)
++$(PKG)_VERSION  := main
++$(PKG)_IGNORE   :=
++$(PKG)_CHECKSUM := 9a427a1002b4597010495e18057073a564b3cba3fcb697bd518563ef95c2ecce
++$(PKG)_GH_CONF  := webmproject/sjpeg/tags
++$(PKG)_DEPS     := cc jpeg libpng
++
++define $(PKG)_BUILD
++
++	# configure package with cmake
++	cd "$(BUILD_DIR)" && "$(TARGET)-cmake" "$(SOURCE_DIR)" \
++		-DCMAKE_INSTALL_PREFIX="$(PREFIX)/$(TARGET)" \
++		-DCMAKE_PREFIX_PATH="$(PREFIX)/$(TARGET)" \
++		-DBUILD_SHARED_LIBS=$(CMAKE_SHARED_BOOL) \
++		-DSJPEG_BUILD_EXAMPLES=OFF \
++		-DSJPEG_ENABLE_SIMD=ON \
++		-DCMAKE_BUILD_TYPE=Release
++
++	# build package and install
++	$(MAKE) -C "$(BUILD_DIR)" -j $(JOBS)
++	$(MAKE) -C "$(BUILD_DIR)" -j 1 install
++
++	# Generate pkg-config (.pc) file for sjpeg (https://github.com/webmproject/sjpeg/issues/143)
++	$(call GENERATE_PC, \
++		$(PREFIX)/$(TARGET), \
++		$(PKG), \
++		$($(PKG)_DESCR), \
++		$($(PKG)_VERSION), \
++        , \
++		libjpeg libpng, \
++		-lsjpeg, \
++	)
++
++	# compile a test program to verify the library is usable
++	"$(TARGET)-g++" -Wall -Wextra "$(TEST_FILE)" \
++		-o "$(PREFIX)/$(TARGET)/bin/test-$(PKG).exe" \
++		`"$(TARGET)-pkg-config" "$(PKG)" --cflags --libs`
++endef
+diff --git a/src/skcms-test.cpp b/src/skcms-test.cpp
+new file mode 100644
+index 00000000..2a96d750
+--- /dev/null
++++ b/src/skcms-test.cpp
+@@ -0,0 +1,43 @@
++/*
++    This file is part of MXE. See LICENSE.md for licensing information.
++
++    Initial test file scaffold generated using the "gsrc" tool:
++    https://github.com/hkunz/git-fetcher
++
++    Compilation (pkg-config):
++
++    ./usr/bin/x86_64-w64-mingw32.static-g++ \
++        src/skcms-test.cpp \
++        $(./usr/bin/x86_64-w64-mingw32.static-pkg-config --cflags --libs skcms) \
++        -o usr/x86_64-w64-mingw32.static/bin/test-skcms.exe
++
++    Compilation (manual):
++
++    ./usr/bin/x86_64-w64-mingw32.static-g++ \
++        src/skcms-test.cpp \
++        -I usr/x86_64-w64-mingw32.static/include/ \
++        -L usr/x86_64-w64-mingw32.static/lib/ \
++        -lskcms \
++        -o usr/x86_64-w64-mingw32.static/bin/test-skcms.exe
++*/
++
++#include <cstdio>
++#include <cstdint>
++#include <skcms/skcms.h>
++
++int main() {
++    printf("Testing skcms library...\n");
++
++    // Get sRGB profile
++    const skcms_ICCProfile* profile = skcms_sRGB_profile();
++    if (!profile) {
++        fprintf(stderr, "Failed to get sRGB profile!\n");
++        return 1;
++    }
++
++    printf("sRGB profile loaded successfully\n");
++
++    // Done
++    printf("skcms test completed successfully!\n");
++    return 0;
++}
+\ No newline at end of file
+diff --git a/src/skcms.mk b/src/skcms.mk
+new file mode 100644
+index 00000000..56aa66dc
+--- /dev/null
++++ b/src/skcms.mk
+@@ -0,0 +1,82 @@
++# This file is part of MXE. See LICENSE.md for licensing information.
++# Initial package scaffold generated with the "gsrc" tool:
++# https://github.com/hkunz/git-fetcher
++
++include src/common/pkgconfig-generator.mk
++
++PKG             := skcms
++$(PKG)_WEBSITE  := https://github.com/google/skcms
++$(PKG)_DESCR    := Simple color management system by Google
++$(PKG)_VERSION  := 2025_09_16
++$(PKG)_CHECKSUM := 08c45dff8ede1b56a6e7d1e9fdaf113dd91ab28ddcbcf696229b683e5e9af45a
++$(PKG)_GH_CONF  := google/skcms/tags
++$(PKG)_DEPS     := cc
++
++define $(PKG)_BUILD
++
++    # Build static library manually because Bazel projects use network which is not allowed on MXE
++
++    # Compile main skcms.cc
++    $(TARGET)-c++ -c '$(SOURCE_DIR)/skcms.cc' \
++        -O3 -std=c++17 -DSKCMS_IMPLEMENTATION=1 \
++        -I'$(SOURCE_DIR)' -I'$(SOURCE_DIR)/src' \
++        -o '$(BUILD_DIR)/skcms.o'
++
++    # Compile TransformBaseline
++    $(TARGET)-c++ -c '$(SOURCE_DIR)/src/skcms_TransformBaseline.cc' \
++        -O3 -std=c++17 -DSKCMS_IMPLEMENTATION=1 \
++        -I'$(SOURCE_DIR)' -I'$(SOURCE_DIR)/src' \
++        -o '$(BUILD_DIR)/skcms_TransformBaseline.o'
++
++    # Compile TransformHsw (AVX2, F16C)
++    $(TARGET)-c++ -c '$(SOURCE_DIR)/src/skcms_TransformHsw.cc' \
++        -O3 -std=c++17 -DSKCMS_IMPLEMENTATION=1 \
++        -I'$(SOURCE_DIR)' -I'$(SOURCE_DIR)/src' \
++        -mavx2 -mf16c \
++        -o '$(BUILD_DIR)/skcms_TransformHsw.o'
++
++    # Compile TransformSkx (AVX512)
++    $(TARGET)-c++ -c '$(SOURCE_DIR)/src/skcms_TransformSkx.cc' \
++        -O3 -std=c++17 -DSKCMS_IMPLEMENTATION=1 \
++        -I'$(SOURCE_DIR)' -I'$(SOURCE_DIR)/src' \
++        -mavx512f -mavx512dq -mavx512cd -mavx512bw -mavx512vl \
++        -o '$(BUILD_DIR)/skcms_TransformSkx.o'
++
++    # Archive all object files into static library
++    $(TARGET)-ar rcs '$(BUILD_DIR)/libskcms.a' \
++        '$(BUILD_DIR)/skcms.o' \
++        '$(BUILD_DIR)/skcms_TransformBaseline.o' \
++        '$(BUILD_DIR)/skcms_TransformHsw.o' \
++        '$(BUILD_DIR)/skcms_TransformSkx.o'
++
++    tmpfile=$(mktemp)
++    $(SED) 's|"src/skcms_public.h"|"skcms_public.h"|' "$(SOURCE_DIR)/skcms.h" > "$tmpfile"
++    mv "$tmpfile" "$(SOURCE_DIR)/skcms.h"
++
++    # Install headers
++    mkdir -p '$(PREFIX)/$(TARGET)/include/skcms'
++    cp '$(SOURCE_DIR)/skcms.h' '$(PREFIX)/$(TARGET)/include/skcms/'
++    cp '$(SOURCE_DIR)/src/skcms_public.h' '$(PREFIX)/$(TARGET)/include/skcms/'
++    cp '$(SOURCE_DIR)/src/skcms_internals.h' '$(PREFIX)/$(TARGET)/include/skcms/'
++    cp '$(SOURCE_DIR)/src/skcms_Transform.h' '$(PREFIX)/$(TARGET)/include/skcms/'
++    cp '$(SOURCE_DIR)/src/Transform_inl.h' '$(PREFIX)/$(TARGET)/include/skcms/'
++
++
++    mkdir -p '$(PREFIX)/$(TARGET)/lib'
++    cp '$(BUILD_DIR)/libskcms.a' '$(PREFIX)/$(TARGET)/lib/'
++
++    $(call GENERATE_PC, \
++        $(PREFIX)/$(TARGET), \
++        $(PKG), \
++        $($(PKG)_DESCR), \
++        $($(PKG)_VERSION), \
++        , \
++        , \
++        -lskcms, \
++    )
++
++    # compile a test program to verify the library is usable
++	"$(TARGET)-g++" -Wall -Wextra "$(TEST_FILE)" \
++		-o "$(PREFIX)/$(TARGET)/bin/test-$(PKG).exe" \
++		`"$(TARGET)-pkg-config" "$(PKG)" --cflags --libs`
++endef
+diff --git a/src/spatialite.mk b/src/spatialite.mk
+index 3e5337cc..1de06f41 100644
+--- a/src/spatialite.mk
++++ b/src/spatialite.mk
+@@ -10,7 +10,7 @@ $(PKG)_SUBDIR   := libspatialite-$($(PKG)_VERSION)
+ $(PKG)_FILE     := libspatialite-$($(PKG)_VERSION).tar.gz
+ $(PKG)_URL      := https://www.gaia-gis.it/gaia-sins/libspatialite-sources/$($(PKG)_FILE)
+ $(PKG)_DEPS     := cc dlfcn-win32 freexl geos libiconv libxml2 proj sqlite zlib \
+-                   minizip
++                   minizip-ng
+ 
+ define $(PKG)_UPDATE
+     $(WGET) -q -O- 'https://www.gaia-gis.it/gaia-sins/libspatialite-sources/' | \
+diff --git a/src/spng-test.cpp b/src/spng-test.cpp
+new file mode 100644
+index 00000000..dfc34caa
+--- /dev/null
++++ b/src/spng-test.cpp
+@@ -0,0 +1,46 @@
++/*
++    This file is part of MXE. See LICENSE.md for licensing information.
++
++    Initial test file scaffold generated using the "gsrc" tool:
++    https://github.com/hkunz/git-fetcher
++
++    Compilation (pkg-config):
++
++    ./usr/bin/x86_64-w64-mingw32.static-g++ \
++        src/spng-test.cpp \
++        $(./usr/bin/x86_64-w64-mingw32.static-pkg-config --cflags --libs libspng_static) \
++        -o usr/x86_64-w64-mingw32.static/bin/test-spng.exe
++
++    Compilation (manual):
++
++    ./usr/bin/x86_64-w64-mingw32.static-g++ \
++        src/spng-test.cpp \
++        -I usr/x86_64-w64-mingw32.static/include/ \
++        -L usr/x86_64-w64-mingw32.static/lib/ \
++        -lspng_static -lz \
++        -o usr/x86_64-w64-mingw32.static/bin/test-spng.exe
++*/
++
++#define SPNG_STATIC
++#include <spng.h>
++#include <iostream>
++
++int main() {
++    unsigned char buf[1] = {0};
++    spng_ctx *ctx = spng_ctx_new(0);
++    if (!ctx) {
++        std::cerr << "Failed to create spng_ctx\n";
++        return 1;
++    }
++
++    spng_set_png_buffer(ctx, buf, 1);
++
++    struct spng_plte plte;
++    int err = spng_get_plte(ctx, &plte);
++
++    std::cout << "spng_get_plte returned: " << spng_strerror(err) << "\n";
++    std::cout << "[spng-test] Library loaded and API accessible: SUCCESS\n";
++
++    spng_ctx_free(ctx);
++    return 0;
++}
+diff --git a/src/spng.mk b/src/spng.mk
+new file mode 100644
+index 00000000..6de25857
+--- /dev/null
++++ b/src/spng.mk
+@@ -0,0 +1,31 @@
++# This file is part of MXE. See LICENSE.md for licensing information.
++# Initial package scaffold generated with the "gsrc" tool:
++# https://github.com/hkunz/git-fetcher
++
++PKG             := spng
++$(PKG)_WEBSITE  := https://libspng.org
++$(PKG)_DESCR    := Simple PNG library
++$(PKG)_VERSION  := 0.7.4
++$(PKG)_CHECKSUM := 47ec02be6c0a6323044600a9221b049f63e1953faf816903e7383d4dc4234487
++$(PKG)_GH_CONF  := randy408/libspng/tags,v
++$(PKG)_DEPS     := cc zlib
++
++define $(PKG)_BUILD
++    cd '$(BUILD_DIR)' && '$(TARGET)-cmake' '$(SOURCE_DIR)' \
++        -DCMAKE_INSTALL_PREFIX='$(PREFIX)/$(TARGET)' \
++        -DCMAKE_BUILD_TYPE=Release \
++        -DBUILD_SHARED_LIBS=OFF \
++        -DSPNG_BUILD_TESTS=OFF \
++		-DSPNG_SHARED=OFF \
++		-DSPNG_STATIC=ON \
++		-DBUILD_EXAMPLES=OFF \
++		-DZLIB_ROOT='$(PREFIX)/$(TARGET)'
++
++    $(MAKE) -C '$(BUILD_DIR)' -j '$(JOBS)'
++    $(MAKE) -C '$(BUILD_DIR)' -j 1 install
++
++    '$(TARGET)-g++' \
++        '$(TEST_FILE)' -o '$(PREFIX)/$(TARGET)/bin/test-$(PKG).exe' \
++        `$(TARGET)-pkg-config lib$(PKG)_static --cflags --libs`
++
++endef
+diff --git a/src/svtav1-test.cpp b/src/svtav1-test.cpp
+new file mode 100644
+index 00000000..5e2ea4c3
+--- /dev/null
++++ b/src/svtav1-test.cpp
+@@ -0,0 +1,52 @@
++/*
++    This file is part of MXE. See LICENSE.md for licensing information.
++
++    Initial test file scaffold generated using the "gsrc" tool:
++    https://github.com/hkunz/git-fetcher
++
++    Compilation (pkg-config):
++
++    ./usr/bin/x86_64-w64-mingw32.static-g++ \
++        src/svtav1-test.cpp \
++        $(./usr/bin/x86_64-w64-mingw32.static-pkg-config --cflags --libs SvtAv1Enc) \
++        -o usr/x86_64-w64-mingw32.static/bin/test-svtav1.exe
++
++    Compilation (manual):
++
++    ./usr/bin/x86_64-w64-mingw32.static-g++ \
++        src/svtav1-test.cpp \
++        -I usr/x86_64-w64-mingw32.static/include \
++        -L usr/x86_64-w64-mingw32.static/lib \
++        -lSvtAv1Enc \
++        -o usr/x86_64-w64-mingw32.static/bin/test-svtav1.exe
++*/
++
++#include "svt-av1/EbSvtAv1.h"
++#include "svt-av1/EbSvtAv1Enc.h"
++
++int main() {
++    EbComponentType* encoder = nullptr;
++    EbSvtAv1EncConfiguration config;
++
++    // Initialize handle (loads defaults into config)
++    if (svt_av1_enc_init_handle(&encoder, &config) != EB_ErrorNone) {
++        return 1;
++    }
++
++    // Set minimal valid source dimensions
++    config.source_width  = 16; // must be >= 4
++    config.source_height = 16; // must be >= 4
++
++    // Optionally, choose a simple encoding mode
++    config.enc_mode = ENC_M0; // default low-latency preset
++
++    // Apply configuration
++    if (svt_av1_enc_set_parameter(encoder, &config) != EB_ErrorNone) {
++        return 1;
++    }
++
++    // Deinitialize handle
++    svt_av1_enc_deinit_handle(encoder);
++
++    return 0;
++}
+diff --git a/src/svtav1.mk b/src/svtav1.mk
+new file mode 100644
+index 00000000..b3ab9513
+--- /dev/null
++++ b/src/svtav1.mk
+@@ -0,0 +1,37 @@
++# This file is part of MXE. See LICENSE.md for licensing information.
++# Initial package scaffold generated with the "gsrc" tool:
++# https://github.com/hkunz/git-fetcher
++
++PKG             := svtav1
++$(PKG)_WEBSITE  := https://gitlab.com/AOMediaCodec/SVT-AV1.git
++$(PKG)_DESCR    := Scalable Video Technology for AV1 encoder library
++$(PKG)_VERSION  := 4.1.0
++$(PKG)_IGNORE   :=
++$(PKG)_CHECKSUM := 6c4c0c44ff0ba3d136d6f57f3a707f9de8e9c866f50f809c1d22a43f0d8c9583
++$(PKG)_FILE     := SVT-AV1-v$($(PKG)_VERSION).tar.gz
++$(PKG)_SUBDIR   := SVT-AV1-v$($(PKG)_VERSION)
++$(PKG)_URL      := https://gitlab.com/AOMediaCodec/SVT-AV1/-/archive/v$($(PKG)_VERSION)/$($(PKG)_FILE)
++$(PKG)_DEPS     := cc pthreads
++
++define $(PKG)_BUILD
++
++	# configure package with cmake
++	cd "$(BUILD_DIR)" && "$(TARGET)-cmake" "$(SOURCE_DIR)" \
++		-DCMAKE_INSTALL_PREFIX="$(PREFIX)/$(TARGET)" \
++		-DCMAKE_PREFIX_PATH="$(PREFIX)/$(TARGET)" \
++		-DBUILD_SHARED_LIBS=$(CMAKE_SHARED_BOOL) \
++		-DCOMPILE_C_ONLY=OFF \
++		-DLOG_QUIET=OFF \
++		-DMINIMAL_BUILD=OFF \
++		-DRTC_BUILD=OFF \
++		-DCMAKE_BUILD_TYPE=Release
++
++	# build package and install
++	$(MAKE) -C "$(BUILD_DIR)" -j $(JOBS)
++	$(MAKE) -C "$(BUILD_DIR)" -j 1 install
++
++	# compile a test program to verify the library is usable
++	"$(TARGET)-g++" -Wall -Wextra "$(TEST_FILE)" \
++		-o "$(PREFIX)/$(TARGET)/bin/test-$(PKG).exe" \
++		`"$(TARGET)-pkg-config" "SvtAv1Enc" --cflags --libs`
++endef
+diff --git a/src/tiff.mk b/src/tiff.mk
+index 85806567..9a92fb27 100644
+--- a/src/tiff.mk
++++ b/src/tiff.mk
+@@ -9,7 +9,7 @@ $(PKG)_CHECKSUM := b92017489bdc1db3a4c97191aa4b75366673cb746de0dce5d7a749d595468
+ $(PKG)_SUBDIR   := tiff-$($(PKG)_VERSION)
+ $(PKG)_FILE     := tiff-$($(PKG)_VERSION).tar.xz
+ $(PKG)_URL      := https://download.osgeo.org/libtiff/$($(PKG)_FILE)
+-$(PKG)_DEPS     := cc jpeg libwebp xz zlib zstd
++$(PKG)_DEPS     := cc jpeg libwebp xz zlib zstd lzma
+ 
+ define $(PKG)_UPDATE
+     $(WGET) -q -O- 'https://download.osgeo.org/libtiff/' | \
+diff --git a/src/uhdr-test.cpp b/src/uhdr-test.cpp
+new file mode 100644
+index 00000000..17941fef
+--- /dev/null
++++ b/src/uhdr-test.cpp
+@@ -0,0 +1,41 @@
++/*
++    This file is part of MXE. See LICENSE.md for licensing information.
++
++    Initial test file scaffold generated using the "gsrc" tool:
++    https://github.com/hkunz/git-fetcher
++
++    Compilation (pkg-config):
++
++    ./usr/bin/x86_64-w64-mingw32.static-g++ \
++        src/uhdr-test.cpp \
++        $(./usr/bin/x86_64-w64-mingw32.static-pkg-config --cflags --libs uhdr) \
++        -o usr/x86_64-w64-mingw32.static/bin/test-uhdr.exe
++
++    Compilation (manual):
++
++    ./usr/bin/x86_64-w64-mingw32.static-g++ \
++        src/uhdr-test.cpp \
++        -I usr/x86_64-w64-mingw32.static/include \
++        -L usr/x86_64-w64-mingw32.static/lib \
++        -luhdr -ljpeg -lpthread \
++        -o usr/x86_64-w64-mingw32.static/bin/test-uhdr.exe
++*/
++
++#include <ultrahdr_api.h>
++#include <cstdio>
++
++int main() {
++    uhdr_error_info_t info;
++
++    uhdr_codec_private_t* codec = uhdr_create_decoder();
++
++    if (!codec) {
++        std::printf("FAILED: decoder creation returned null\n");
++        return 1;
++    }
++
++    uhdr_release_decoder(codec);
++
++    std::printf("UltraHDR library link + runtime OK\n");
++    return 0;
++}
+\ No newline at end of file
+diff --git a/src/uhdr.mk b/src/uhdr.mk
+new file mode 100644
+index 00000000..bf14844c
+--- /dev/null
++++ b/src/uhdr.mk
+@@ -0,0 +1,65 @@
++# This file is part of MXE. See LICENSE.md for licensing information.
++# Initial package scaffold generated with the "gsrc" tool:
++# https://github.com/hkunz/git-fetcher
++
++include src/common/pkgconfig-generator.mk
++
++PKG             := uhdr
++$(PKG)_WEBSITE  := https://developer.android.com/guide/topics/media/platform/hdr-image-format
++$(PKG)_DESCR    := Ultra HDR is a true HDR image format, and is backcompatible.  libultrahdr is the reference codec for the Ultra HDR format.  The codecs that support the format can render the HDR intent of the image on HDR displays;  other codecs can still decode and display the SDR intent of the image.
++$(PKG)_VERSION  := 1.4.0
++$(PKG)_IGNORE   :=
++$(PKG)_CHECKSUM := e7e1252e2c44d8ed6b99ee0f67a3caf2d8a61c43834b13b1c3cd485574c03ab9
++$(PKG)_GH_CONF  := google/libultrahdr/tags,v
++$(PKG)_DEPS     := cc libjpeg-turbo pthreads mesa
++
++define $(PKG)_BUILD
++	# configure package with cmake
++	cd "$(BUILD_DIR)" && "$(TARGET)-cmake" "$(SOURCE_DIR)" \
++		-DCMAKE_INSTALL_PREFIX="$(PREFIX)/$(TARGET)" \
++		-DCMAKE_PREFIX_PATH="$(PREFIX)/$(TARGET)" \
++		-DBUILD_SHARED_LIBS=$(CMAKE_SHARED_BOOL) \
++		-DUHDR_BUILD_BENCHMARK=OFF \
++		-DUHDR_BUILD_DEPS=OFF \
++		-DUHDR_BUILD_EXAMPLES=OFF \
++		-DUHDR_BUILD_FUZZERS=OFF \
++		-DUHDR_BUILD_JAVA=OFF \
++		-DUHDR_BUILD_PACKAGING=OFF \
++		-DUHDR_BUILD_TESTS=OFF \
++		-DUHDR_ENABLE_GLES=OFF \
++		-DUHDR_ENABLE_INSTALL=ON \
++		-DUHDR_ENABLE_INTRINSICS=ON \
++		-DUHDR_ENABLE_LOGS=OFF \
++		-DUHDR_ENABLE_WERROR=OFF \
++		-DUHDR_WRITE_ISO=ON \
++		-DUHDR_WRITE_XMP=OFF \
++		-DCMAKE_BUILD_TYPE=Release
++
++	# build package and install
++	$(MAKE) -C "$(BUILD_DIR)" -j $(JOBS)
++
++    # Manual installation (CMake installing rules are missing)
++    $(INSTALL) -d "$(PREFIX)/$(TARGET)/lib"
++    $(INSTALL) -d "$(PREFIX)/$(TARGET)/include"
++
++    $(INSTALL) -m 644 "$(BUILD_DIR)/libuhdr.a" "$(PREFIX)/$(TARGET)/lib/"
++    $(INSTALL) -m 644 "$(BUILD_DIR)/libcore.a" "$(PREFIX)/$(TARGET)/lib/"
++    $(INSTALL) -m 644 "$(BUILD_DIR)/libimage_io.a" "$(PREFIX)/$(TARGET)/lib/"
++	$(INSTALL) -m 644 "$(SOURCE_DIR)/ultrahdr_api.h" "$(PREFIX)/$(TARGET)/include/"
++
++	# Only needed if the project does not ship a .pc file
++	$(call GENERATE_PC, \
++		$(PREFIX)/$(TARGET), \
++		$(PKG), \
++		$($(PKG)_DESCR), \
++		$($(PKG)_VERSION), \
++		, \
++		libjpeg pthreads, \
++		-luhdr, \
++	)
++
++	# compile a test program to verify the library is usable
++	"$(TARGET)-g++" -Wall -Wextra "$(TEST_FILE)" \
++		-o "$(PREFIX)/$(TARGET)/bin/test-$(PKG).exe" \
++		`"$(TARGET)-pkg-config" "$(PKG)" --cflags --libs`
++endef
+diff --git a/src/uvg266-test.cpp b/src/uvg266-test.cpp
+new file mode 100644
+index 00000000..f1cd4567
+--- /dev/null
++++ b/src/uvg266-test.cpp
+@@ -0,0 +1,35 @@
++/*
++    This file is part of MXE. See LICENSE.md for licensing information.
++
++    Initial test file scaffold generated using the "gsrc" tool:
++    https://github.com/hkunz/git-fetcher
++
++    Compilation (pkg-config):
++
++    ./usr/bin/x86_64-w64-mingw32.static-g++ \
++        src/uvg266-test.cpp \
++        $(./usr/bin/x86_64-w64-mingw32.static-pkg-config --cflags --libs uvg266) \
++        -o usr/x86_64-w64-mingw32.static/bin/test-uvg266.exe
++
++    Compilation (manual):
++
++    ./usr/bin/x86_64-w64-mingw32.static-g++ \
++        src/uvg266-test.cpp \
++        -I usr/x86_64-w64-mingw32.static/include \
++        -L usr/x86_64-w64-mingw32.static/lib \
++        -luvg266 \
++        -o usr/x86_64-w64-mingw32.static/bin/test-uvg266.exe
++*/
++
++#include <cstdlib>
++#include <iostream>
++
++int main() {
++    int ret = std::system("uvg266.exe --version");
++    if (ret == 0) {
++        std::cout << "uvg266 CLI encoder ran successfully!" << std::endl;
++    } else {
++        std::cerr << "uvg266 CLI encoder failed!" << std::endl;
++    }
++    return ret;
++}
+diff --git a/src/uvg266.mk b/src/uvg266.mk
+new file mode 100644
+index 00000000..b316fdb2
+--- /dev/null
++++ b/src/uvg266.mk
+@@ -0,0 +1,32 @@
++# This file is part of MXE. See LICENSE.md for licensing information.
++# Initial package scaffold generated with the "gsrc" tool:
++# https://github.com/hkunz/git-fetcher
++
++PKG             := uvg266
++$(PKG)_WEBSITE  := https://ultravideo.fi/uvg266.html
++$(PKG)_DESCR    := An open-source VVC encoder based on Kvazaar
++$(PKG)_VERSION  := 0.8.1
++$(PKG)_IGNORE   :=
++$(PKG)_CHECKSUM := 9a2c68f94a1105058d1e654191036423d0a0fcf33b7e790dd63801997540b6ec
++$(PKG)_GH_CONF  := ultravideo/uvg266/tags,v
++$(PKG)_DEPS     := cc pthreads
++
++define $(PKG)_BUILD
++	# configure package with cmake
++	cd "$(BUILD_DIR)" && "$(TARGET)-cmake" "$(SOURCE_DIR)" \
++		-DCMAKE_INSTALL_PREFIX="$(PREFIX)/$(TARGET)" \
++		-DCMAKE_PREFIX_PATH="$(PREFIX)/$(TARGET)" \
++		-DBUILD_SHARED_LIBS=$(CMAKE_SHARED_BOOL) \
++		-DBUILD_SHARED_LIBS=ON \
++		-DBUILD_TESTS=ON \
++		-DCMAKE_BUILD_TYPE=Release
++
++	# build package and install
++	$(MAKE) -C "$(BUILD_DIR)" -j $(JOBS)
++	$(MAKE) -C "$(BUILD_DIR)" -j 1 install
++
++	# compile a test program to verify the library is usable
++	"$(TARGET)-g++" -Wall -Wextra "$(TEST_FILE)" \
++		-o "$(PREFIX)/$(TARGET)/bin/test-$(PKG).exe" \
++		`"$(TARGET)-pkg-config" "$(PKG)" --cflags --libs`
++endef
+diff --git a/src/vmaf-test.cpp b/src/vmaf-test.cpp
+new file mode 100644
+index 00000000..c003b54a
+--- /dev/null
++++ b/src/vmaf-test.cpp
+@@ -0,0 +1,35 @@
++/*
++    This file is part of MXE. See LICENSE.md for licensing information.
++
++    Initial test file scaffold generated using the "gsrc" tool:
++    https://github.com/hkunz/git-fetcher
++
++    Compilation (pkg-config):
++
++    ./usr/bin/x86_64-w64-mingw32.static-g++ \
++        src/vmaf-test.cpp \
++        $(./usr/bin/x86_64-w64-mingw32.static-pkg-config --cflags --libs libvmaf) \
++        -o usr/x86_64-w64-mingw32.static/bin/test-vmaf.exe
++
++    Compilation (manual):
++
++    ./usr/bin/x86_64-w64-mingw32.static-g++ \
++        src/vmaf-test.cpp \
++        -I usr/x86_64-w64-mingw32.static/include/ \
++        -L usr/x86_64-w64-mingw32.static/lib/ \
++        -lvmaf -pthread -lm \
++        -o usr/x86_64-w64-mingw32.static/bin/test-vmaf.exe
++*/
++
++#include <iostream>
++#include <libvmaf/libvmaf.h>
++
++int main() {
++    std::cout << "VMAF version: " << vmaf_version() << std::endl;
++
++    VmafConfiguration cfg;
++    cfg.log_level = VMAF_LOG_LEVEL_NONE;
++
++    std::cout << "VmafConfiguration object created successfully!" << std::endl;
++    return 0;
++}
+diff --git a/src/vmaf.mk b/src/vmaf.mk
+new file mode 100644
+index 00000000..f1d460e0
+--- /dev/null
++++ b/src/vmaf.mk
+@@ -0,0 +1,39 @@
++# This file is part of MXE. See LICENSE.md for licensing information.
++# Initial package scaffold generated with the "gsrc" tool:
++# https://github.com/hkunz/git-fetcher
++
++PKG             := vmaf
++$(PKG)_WEBSITE  := https://github.com/Netflix/vmaf.git
++$(PKG)_DESCR    := Perceptual video quality assessment based on multi-method fusion.
++$(PKG)_VERSION  := 3.1.0
++$(PKG)_IGNORE   :=
++$(PKG)_CHECKSUM := 80090e29d7fd0db472ddc663513f5be89bc936815e62b767e630c1d627279fe2
++$(PKG)_GH_CONF  := Netflix/vmaf/tags,v
++$(PKG)_DEPS     := cc meson-wrapper
++
++define $(PKG)_BUILD
++
++	# configure package with meson
++	$(MXE_MESON_WRAPPER) $(MXE_MESON_OPTS) \
++		-Denable_tests=true \
++		-Denable_docs=true \
++		-Denable_tools=true \
++		-Denable_asm=true \
++		-Denable_avx512=true \
++		-Dbuilt_in_models=true \
++		-Denable_float=false \
++		-Denable_cuda=false \
++		-Denable_nvtx=false \
++		-Denable_nvcc=true \
++		--buildtype=release \
++		"$(BUILD_DIR)" "$(SOURCE_DIR)/libvmaf"
++
++	# build package and install
++	$(MXE_NINJA) -C "$(BUILD_DIR)" -j $(JOBS)
++	$(MXE_NINJA) -C "$(BUILD_DIR)" -j 1 install
++
++	# compile a test program to verify the library is usable
++	"$(TARGET)-g++" -Wall -Wextra "$(TEST_FILE)" \
++		-o "$(PREFIX)/$(TARGET)/bin/test-$(PKG).exe" \
++		`"$(TARGET)-pkg-config" "lib$(PKG)" --cflags --libs`
++endef
+diff --git a/src/vvdec-test.cpp b/src/vvdec-test.cpp
+new file mode 100644
+index 00000000..1cc5b5f3
+--- /dev/null
++++ b/src/vvdec-test.cpp
+@@ -0,0 +1,40 @@
++/*
++    Minimal test program for vvdec, verifying basic functionality
++    and compatibility with MXE static builds on Windows.
++
++    To compile with MXE (example):
++
++    ./usr/bin/x86_64-w64-mingw32.static-g++ \
++        src/vvdec-test.cpp \
++        -I usr/x86_64-w64-mingw32.static/include \
++        -L usr/x86_64-w64-mingw32.static/lib \
++        -lvvdec \
++        -o usr/x86_64-w64-mingw32.static/bin/test-vvdec.exe
++*/
++
++#include <vvdec/vvdec.h>
++#include <cstdio>
++#include <cstring>
++
++int main() {
++    // Print version
++    printf("VVDEC version: %s\n", vvdec_get_version());
++
++    // Initialize parameters manually
++    vvdecParams params;
++    std::memset(&params, 0, sizeof(params));
++    params.threads = 1;  // example: set 1 thread
++
++    // Open decoder
++    vvdecDecoder* decoder = vvdec_decoder_open(&params);
++    if (!decoder) {
++        printf("Failed to create decoder\n");
++        return 1;
++    }
++
++    // Close decoder
++    vvdec_decoder_close(decoder);
++
++    printf("VVDEC test done\n");
++    return 0;
++}
+diff --git a/src/vvdec.mk b/src/vvdec.mk
+new file mode 100644
+index 00000000..82c7edc2
+--- /dev/null
++++ b/src/vvdec.mk
+@@ -0,0 +1,45 @@
++# This file is part of MXE. See LICENSE.md for licensing information.
++# Initial package scaffold generated with the "gsrc" tool:
++# https://github.com/hkunz/git-fetcher
++
++PKG             := vvdec
++$(PKG)_WEBSITE  := https://www.hhi.fraunhofer.de/en/departments/vca/technologies-and-solutions/h266-vvc.html
++$(PKG)_DESCR    := VVdeC, the Fraunhofer Versatile Video Decoder
++$(PKG)_VERSION  := 3.1.0
++$(PKG)_IGNORE   :=
++$(PKG)_CHECKSUM := e3e5093acfdcbfd2159f3d0166d451d7ccabd293ed30f3762b481c9c6c0a7512
++$(PKG)_GH_CONF  := fraunhoferhhi/vvdec/tags,v
++$(PKG)_DEPS     := cc pthreads
++
++define $(PKG)_BUILD
++	# configure package with cmake
++	cd "$(BUILD_DIR)" && "$(TARGET)-cmake" "$(SOURCE_DIR)" \
++		-DCMAKE_INSTALL_PREFIX="$(PREFIX)/$(TARGET)" \
++		-DCMAKE_PREFIX_PATH="$(PREFIX)/$(TARGET)" \
++		-DBUILD_SHARED_LIBS=$(CMAKE_SHARED_BOOL) \
++		-DBUILD_SHARED_LIBS=OFF \
++		-DVVDEC_ENABLE_BITSTREAM_DOWNLOAD=OFF \
++		-DVVDEC_ENABLE_BUILD_TYPE_POSTFIX=OFF \
++		-DVVDEC_ENABLE_ITT=OFF \
++		-DVVDEC_ENABLE_LINK_TIME_OPT=ON \
++		-DVVDEC_ENABLE_LOCAL_BITSTREAM_DOWNLOAD=OFF \
++		-DVVDEC_ENABLE_TRACING=FALSE \
++		-DVVDEC_ENABLE_UNSTABLE_API=OFF \
++		-DVVDEC_ENABLE_WERROR=ON \
++		-DVVDEC_ENABLE_X86_SIMD=TRUE \
++		-DVVDEC_INSTALL_VVDECAPP=OFF \
++		-DVVDEC_LIBRARY_ONLY=OFF \
++		-DVVDEC_TOPLEVEL_OUTPUT_DIRS=ON \
++		-DVVDEC_USE_ADDRESS_SANITIZER=OFF \
++		-DVVDEC_USE_THREAD_SANITIZER=OFF \
++		-DCMAKE_BUILD_TYPE=Release
++
++	# build package and install
++	$(MAKE) -C "$(BUILD_DIR)" -j $(JOBS)
++	$(MAKE) -C "$(BUILD_DIR)" -j 1 install
++
++	# compile a test program to verify the library is usable
++	"$(TARGET)-g++" -Wall -Wextra "$(TEST_FILE)" \
++		-o "$(PREFIX)/$(TARGET)/bin/test-$(PKG).exe" \
++		`"$(TARGET)-pkg-config" "lib$(PKG)" --cflags --libs`
++endef
+diff --git a/src/vvenc.mk b/src/vvenc.mk
+new file mode 100644
+index 00000000..f775dcc7
+--- /dev/null
++++ b/src/vvenc.mk
+@@ -0,0 +1,42 @@
++# This file is part of MXE. See LICENSE.md for licensing information.
++# Initial package scaffold generated with the "gsrc" tool:
++# https://github.com/hkunz/git-fetcher
++
++PKG             := vvenc
++$(PKG)_WEBSITE  := https://github.com/fraunhoferhhi/VVenC.git
++$(PKG)_DESCR    := VVenC, the Fraunhofer Versatile Video Encoder
++$(PKG)_VERSION  := 1.14.0
++$(PKG)_IGNORE   :=
++$(PKG)_CHECKSUM := dd43d061d59dbc0d9b9ae5b99cb40672877dd811646228938f065798939ee174
++$(PKG)_GH_CONF  := fraunhoferhhi/VVenC/tags,v
++$(PKG)_SUBDIR   := vvenc-1.14.0
++$(PKG)_DEPS     := cc pthreads nlohmann_json
++
++define $(PKG)_BUILD
++	# configure package with cmake
++	cd "$(BUILD_DIR)" && "$(TARGET)-cmake" "$(SOURCE_DIR)" \
++		-DCMAKE_INSTALL_PREFIX="$(PREFIX)/$(TARGET)" \
++		-DCMAKE_PREFIX_PATH="$(PREFIX)/$(TARGET)" \
++		-DBUILD_SHARED_LIBS=$(CMAKE_SHARED_BOOL) \
++		-DBUILD_SHARED_LIBS=OFF \
++		-DVVENC_ENABLE_ARM_SIMD_SVE2=FALSE \
++		-DVVENC_ENABLE_BUILD_TYPE_POSTFIX=OFF \
++		-DVVENC_ENABLE_INSTALL=ON \
++		-DVVENC_ENABLE_LINK_TIME_OPT=ON \
++		-DVVENC_ENABLE_TRACING=OFF \
++		-DVVENC_ENABLE_UNSTABLE_API=OFF \
++		-DVVENC_ENABLE_WERROR=ON \
++		-DVVENC_ENABLE_X86_SIMD=TRUE \
++		-DVVENC_FFP_CONTRACT_OFF=OFF \
++		-DVVENC_INSTALL_FULLFEATURE_APP=OFF \
++		-DVVENC_LIBRARY_ONLY=OFF \
++		-DVVENC_TOPLEVEL_OUTPUT_DIRS=ON \
++		-DVVENC_USE_ADDRESS_SANITIZER=OFF \
++		-DCMAKE_BUILD_TYPE=Release
++
++	# build package and install
++	$(MAKE) -C "$(BUILD_DIR)" -j $(JOBS)
++	$(MAKE) -C "$(BUILD_DIR)" -j 1 install
++
++	# vvenc already compiles a test program "vvencapp.exe" test with .\vvencapp.exe --version
++endef
