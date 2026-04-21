@@ -1,0 +1,42 @@
+diff --git a/src/cmake/externalpackages.cmake b/src/cmake/externalpackages.cmake
+index 97f0b66f..89928ff6 100644
+--- a/src/cmake/externalpackages.cmake
++++ b/src/cmake/externalpackages.cmake
+@@ -54,6 +54,37 @@ checked_find_package (OpenImageIO REQUIRED
+ checked_find_package (pugixml REQUIRED
+                       VERSION_MIN 1.8)
+ 
++set(MXE_TARGET "$ENV{MXE_TARGET}")  # i.e. x86_64-w64-mingw32.static
++set(LLVM_DIRECTORY "${CMAKE_BINARY_DIR}/../../usr/${MXE_TARGET}")
++set(LLVM_ROOT "${LLVM_DIRECTORY}")
++set(LLVM_PATH "${LLVM_DIRECTORY}")
++set(LLVM_CONFIG "${LLVM_DIRECTORY}/bin/llvm-config.exe")
++set(LLVM_BC_GENERATOR "${LLVM_DIRECTORY}/bin/clang++.exe")
++
++add_library(BZip2::BZip2 INTERFACE IMPORTED)
++set_target_properties(BZip2::BZip2 PROPERTIES
++    INTERFACE_LINK_LIBRARIES bz2
++)
++add_library(OpenEXR::OpenEXR INTERFACE IMPORTED)
++set_target_properties(OpenEXR::OpenEXR PROPERTIES
++    INTERFACE_LINK_LIBRARIES "OpenEXR"
++)
++add_library(GIF::GIF INTERFACE IMPORTED)
++set_target_properties(GIF::GIF PROPERTIES
++    INTERFACE_LINK_LIBRARIES gif
++)
++add_library(Ptex::Ptex_static INTERFACE IMPORTED)
++set_target_properties(Ptex::Ptex_static PROPERTIES
++    INTERFACE_LINK_LIBRARIES ptex
++)
++add_library(LibLZMA::LibLZMA INTERFACE IMPORTED)
++set_target_properties(LibLZMA::LibLZMA PROPERTIES
++    INTERFACE_LINK_LIBRARIES lzma
++)
++add_library(zstd::libzstd INTERFACE IMPORTED)
++set_target_properties(zstd::libzstd PROPERTIES
++    INTERFACE_LINK_LIBRARIES zstd
++)
+ 
+ # LLVM library setup
+ checked_find_package (LLVM REQUIRED

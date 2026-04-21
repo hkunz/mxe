@@ -14,7 +14,7 @@ $(PKG)_DEPS     := cc imath llvm openimageio robin-map pthreads zlib partio pugi
 define $(PKG)_BUILD
 
 	# configure package with cmake
-	cd "$(BUILD_DIR)" && "$(TARGET)-cmake" "/home/a/workspace/OpenShadingLanguage" \
+	cd "$(BUILD_DIR)" && "$(TARGET)-cmake" "$(SOURCE_DIR)" \
 		-DCMAKE_INSTALL_PREFIX="$(PREFIX)/$(TARGET)" \
 		-DCMAKE_PREFIX_PATH="$(PREFIX)/$(TARGET)" \
 		-DBUILD_SHARED_LIBS=$(CMAKE_SHARED_BOOL) \
